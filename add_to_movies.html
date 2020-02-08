@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Untitled Document</title>
+</head>
+
+<body>
+	<h1>Add New Entry to Movies</h1>
+
+	<form method="post" id="add-movie">
+		<fieldset>
+			<input type="text" name="movieTitle" id="" maxlength="255" required placeholder="Movie title"><br><br>
+			<input type="number" name="releaseYear" id="" required placeholder="Release year" min="1888"><br><br>
+			<input type="number" name="runtime" id="" required placeholder="Runtime (in min)" min="0"><br><br>
+			<input type="number" name="ratingIMDB" id="" placeholder="IMBD rating" min="0" max="10" step="0.1"><br><br>
+			<input type="number" name="ratingRottenTomatoes" id="" placeholder="RT rating" min="0" max="100" step="1"><br><br>
+			<button type="submit" form="add-movie" id="">Submit</button>
+		</fieldset>
+	</form>
+
+	<h2>Navigation</h2>
+	<nav><h3>Parent Tables</h3>
+		<ul>
+			<li><a href=#>Movies</a></li>
+			<li><a href=#>Actors</a></li>
+			<li><a href=#>Genres</a></li>
+			<li><a href=#>Best Picture Awards</a></li>
+		</ul>
+	</nav>
+	
+	<nav><h3>Child Tables</h3>
+	<ul>
+		<li><a href=#>Movies-Actors</a></li>
+    </ul>
+	</nav>
+	
+	<nav><h3>Queries</h3>
+	<ul>
+		<li><a href="#">Query #1</a></li>
+		<li><a href="#">Query #2</a></li>
+		<li><a href="#">Query #3</a></li>
+    </ul>
+	</nav>
+	
+	<p>&nbsp;</p>
+	
+	
+</body>
+</html>
