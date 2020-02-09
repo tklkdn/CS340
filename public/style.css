@@ -1,0 +1,29 @@
+.menu {
+	float: left;
+	clear: both;
+	display: inline-block;
+}
+
+.menu ul {
+	padding-left: 0;
+}
+
+.menu li {
+	text-decoration: none;
+	list-style-type: none;
+}
+
+.content {
+	position: fixed;
+	margin-left: 20px;
+	width: 80%;
+	minimum-width: 800px;
+	float: right;
+	display: inline-block;
+}
+
+table {
+	width: 75%;
+	min-width: 600px;
+	border-collapse: collapse;
+}

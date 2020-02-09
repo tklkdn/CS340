@@ -1,0 +1,24 @@
+<h1>{{tableTitle}}</h1>
+	<p>This page shows the contents of the selected parent table.</p>
+	<p>Sample contents of selected table:</p>
+<table border="1">
+  <tbody>
+    <tr>
+	  {{#each colList}}
+        <th>{{this}}</th>
+	  {{/each}}
+	  <th></th>
+	  <th></th>
+    </tr>
+	{{#each dataList}}
+      <tr>
+        {{#each this}}
+		  <td>{{this}}</td>
+		{{/each}}
+	    <td><a href="/admin?table={{../table}}">Edit</a></td>
+	    <td><a href="#">Delete</a></td>
+	  </tr>
+	{{/each}}
+  </tbody>
+</table>
+	<p><a href='/admin?table={{table}}'>Add Row</a></p>

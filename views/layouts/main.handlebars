@@ -3,39 +3,47 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Untitled Document</title>
+	<link rel="stylesheet" href="/public/style.css" type="text/css">
 </head>
 <body>
-	{{{body}}}
-	
-	<h2>Navigation</h2>
-	<nav><h3>Parent Tables</h3>
+	<div class="menu">
 		<ul>
-			<li><a href=#>Movies</a></li>
-			<li><a href=#>Actors</a></li>
-			<li><a href=#>Genres</a></li>
-			<li><a href=#>Best Picture Awards</a></li>
+			<li><a href='/'>Home</a></li>
 		</ul>
-	</nav>
+		
+		<nav><h3>Parent Tables</h3>
+			<ul>
+				<li><a href='/view?table=movies'>Movies</a></li>
+				<li><a href='/view?table=actors'>Actors</a></li>
+				<li><a href='/view?table=genres'>Genres</a></li>
+				<li><a href='/view?table=awards'>Best Picture Awards</a></li>
+			</ul>
+		</nav>
 
-	<nav><h3>Child Tables</h3>
-	<ul>
-		<li><a href=#>Movies-Actors</a></li>
-	</ul>
-	</nav>
+		<nav><h3>Child Tables</h3>
+		<ul>
+			<li><a href='/view?table=movies-actors'>Movies-Actors</a></li>
+		</ul>
+		</nav>
 
-	<nav><h3>Queries</h3>
-	<ul>
-		<li><a href="#">Query #1</a></li>
-		<li><a href="#">Query #2</a></li>
-		<li><a href="#">Query #3</a></li>
-	</ul>
-	</nav>
+		<nav><h3>Queries</h3>
+		<ul>
+			<li><a href="/query">Query #1</a></li>
+			<li><a href="/query">Query #2</a></li>
+			<li><a href="/query">Query #3</a></li>
+		</ul>
+		</nav>
 
-	<p>&nbsp;</p>
+		<p>&nbsp;</p>
 
-	<form id="form1" name="form1" method="post">
-	  Search <input type="search"> <input type="submit">
-	</form>
+		<form id="form1" name="form1" method="post">
+		  Search <br><input type="search"> <br><input type="submit">
+		</form>
+	</div>
+
+	<div class="content">
+		{{{body}}}
+	<div>
 
 </body>
 </html>
