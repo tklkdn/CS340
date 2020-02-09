@@ -19,7 +19,7 @@ const MOVIES_ACTORS_DUMP = [['Mac and Me', 'Jennifer Aniston'],
 
 
 var express = require('express');
-//var mysql = require('./dbcon.js');
+// var mysql = require('./dbcon.js');
 var path = require('path');
 
 var app = express();
@@ -29,7 +29,7 @@ app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 
 app.use('/public', express.static(path.join(__dirname, 'public')));
-app.listen(3000);
+// app.listen(3000);
 
 app.get('/',function(req,res,next){
   var context = {};
