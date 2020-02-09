@@ -1,0 +1,24 @@
+{
+  "name": "cs340",
+  "version": "1.0.0",
+  "description": "Top 50 movie database website",
+  "main": "app.js",
+  "dependencies": {
+    "express-handlebars": "^3.1.0",
+    "express": "^4.17.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tklkdn/CS340.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tklkdn/CS340/issues"
+  },
+  "homepage": "https://github.com/tklkdn/CS340#readme"
+}
