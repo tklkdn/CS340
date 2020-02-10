@@ -4,16 +4,17 @@
 <table border="1">
   <tbody>
     <tr>
-      <td>Col 1</td>
-      <td>Col 2</td>
-    </tr>
-    <tr>
-      <td>Val</td>
-      <td>Val</td>
-    </tr>
-    <tr>
-      <td>Val</td>
-      <td>Val</td>
-    </tr>
+	  <th>Movie title</th>
+	  <th>Release year</th>
+	  <th>Genre</th>
+	  <th>Won Best Picture</th>
+	</tr>
+	{{#each outer}}
+      <tr>
+        {{#each this}}
+		  <td>{{this}}</td>
+		{{/each}}
+	  </tr>
+	{{/each}}
   </tbody>
 </table>

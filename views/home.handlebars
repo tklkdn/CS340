@@ -5,28 +5,19 @@
 <table border="1">
   <tbody>
     <tr>
+	  <th>Rank</th>
 	  <th>Movie title</th>
 	  <th>Release year</th>
 	  <th>Genre</th>
 	  <th>Won Best Picture</th>
 	</tr>
-	<tr>
-	  <td>val</td>
-	  <td>val</td>
-	  <td>val</td>
-	  <td>val</td>
-	</tr>
-	<tr>
-	  <td>val</td>
-	  <td>val</td>
-	  <td>val</td>
-	  <td>val</td>
-	</tr>
-	<tr>
-	  <td>val</td>
-	  <td>val</td>
-	  <td>val</td>
-	  <td>val</td>
-	</tr>
+	{{#each outer}}
+      <tr>
+	    <td>{{inc @index}}
+        {{#each this}}
+		  <td>{{this}}</td>
+		{{/each}}
+	  </tr>
+	{{/each}}
   </tbody>
 </table>

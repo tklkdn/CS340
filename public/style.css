@@ -18,12 +18,19 @@
 	margin-left: 20px;
 	width: 80%;
 	minimum-width: 800px;
+	height: 100%;
 	float: right;
 	display: inline-block;
+	overflow: auto;
 }
 
 table {
 	width: 75%;
 	min-width: 600px;
 	border-collapse: collapse;
+	margin-bottom: 50px;
+}
+
+th, td {
+	padding: 5px;
 }

@@ -23,7 +23,15 @@ var express = require('express');
 var path = require('path');
 
 var app = express();
-var handlebars = require('express-handlebars').create({defaultLayout:'main'});
+
+var handlebars = require('express-handlebars').create(
+  {
+    defaultLayout: 'main',
+    helpers: {
+	  inc: function(val, options) {return parseInt(val) + 1;}
+	}
+  }
+);
 
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
@@ -33,6 +41,15 @@ app.listen(3141);
 
 app.get('/',function(req,res,next){
   var context = {};
+  var outer = [];
+  for (var i = 0; i < 50; i++) {
+	  var inner = [];
+	  for (var j = 0; j < 4; j++) {
+		  inner.push("val");
+	  }
+	  outer.push(inner);
+  }
+  context.outer = outer;
   res.render('home', context);
 });
 
@@ -72,9 +89,24 @@ app.get('/admin',function(req,res,next){
   res.render('admin', context);
 });
 
+app.post('/admin',function(req,res,next) {
+  var context = {};
+  res.render('confirm', context);
+});
+
 app.get('/query',function(req,res,next){
   var context = {};
-  
+  var genre = req.query.genre;
+  var outer = [];
+  for (var i = 0; i < 20; i++) {
+	var inner = [];
+	for (var j = 0; j < 4; j++) {
+	  if (j == 2) inner.push(genre);
+	  else inner.push("val");
+	}
+	  outer.push(inner);
+  }
+  context.outer = outer;
   res.render('query', context);
 });
 

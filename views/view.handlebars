@@ -16,9 +16,19 @@
 		  <td>{{this}}</td>
 		{{/each}}
 	    <td><a href="/admin?table={{../table}}">Edit</a></td>
-	    <td><a href="#">Delete</a></td>
+	    <td><a href="#" onclick="confirmDel()">Delete</a></td>
 	  </tr>
 	{{/each}}
   </tbody>
 </table>
-	<p><a href='/admin?table={{table}}'>Add Row</a></p>
+<p><a href='/admin?table={{table}}'>Add Row</a></p>
+
+<script>
+  var confirmDel = () => {
+    if (confirm("Are you sure you would like to delete this item?")) {
+	  console.log("Item deleted");
+	} else {
+	  console.log("Item not deleted");
+	}
+  };
+</script>	
