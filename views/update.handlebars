@@ -1,0 +1,11 @@
+<h1>Update Entry</h1>
+<p>Values from selected row will populate each non-empty field</p> 
+
+<form method="post" id="update-movie">
+	<fieldset>
+		{{#each colList}}
+		  {{{this}}}<br><br>
+		{{/each}}
+		<button type="submit" form="update-movie" id="">Submit</button>
+	</fieldset>
+</form>

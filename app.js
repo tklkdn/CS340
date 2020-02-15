@@ -95,7 +95,7 @@ app.get('/view',function(req,res,next){
   res.render('view', context);
 });
 
-app.get('/admin',function(req,res,next){
+app.get('/add',function(req,res,next){
   var context = {};
   var colList = [];
   var table = req.query.table;
@@ -109,10 +109,32 @@ app.get('/admin',function(req,res,next){
 	  default: break;
   }
   
-  res.render('admin', context);
+  res.render('add', context);
 });
 
-app.post('/admin',function(req,res,next) {
+app.get('/update',function(req,res,next){
+  var context = {};
+  var colList = [];
+  var table = req.query.table;
+  
+  switch (table) {
+	  case "movies": context.colList = MOVIES_INP; context.dataList = MOVIES_DUMP; break;
+	  case "actors": context.colList = ACTORS_INP; context.dataList = ACTORS_DUMP; break;
+	  case "awards": context.colList = AWARDS_INP; context.dataList = AWARDS_DUMP; break;
+	  case "genres": context.colList = GENRES_INP; context.dataList = GENRES_DUMP; break;
+	  case "movies-actors": context.colList = MOVIES_ACTORS_INP; context.dataList = MOVIES_ACTORS_DUMP; break;
+	  default: break;
+  }
+  
+  res.render('update', context);
+});
+
+app.post('/add',function(req,res,next) {
+  var context = {};
+  res.render('confirm', context);
+});
+
+app.post('/update',function(req,res,next) {
   var context = {};
   res.render('confirm', context);
 });

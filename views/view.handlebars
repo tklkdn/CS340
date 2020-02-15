@@ -15,13 +15,13 @@
         {{#each this}}
 		  <td>{{this}}</td>
 		{{/each}}
-	    <td><a href="/admin?table={{../table}}">Edit</a></td>
+	    <td><a href="/update?table={{../table}}">Edit</a></td>
 	    <td><a href="#" onclick="confirmDel()">Delete</a></td>
 	  </tr>
 	{{/each}}
   </tbody>
 </table>
-<p><a href='/admin?table={{table}}'>Add Row</a></p>
+<p><a href='/add?table={{table}}'>Add Row</a></p>
 
 <script>
   var confirmDel = () => {
