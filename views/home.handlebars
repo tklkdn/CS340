@@ -2,6 +2,14 @@
 <p>Welcome to RedDB Group Home Page for our CS340 Project</p>
 <p>Top 50 movies in our database</p>
 
+<form method="get" id="filter">
+  <label for="genre">Filter by genre</label><br>
+  <select name="genre" id="" required><option disabled selected value>Select genre</option><option>comedy</option><option>drama</option><option>sci-fi</option></select>
+  <button type="submit" form="filter" id="">Filter</button>
+</form>
+
+<br>
+
 <table border="1">
   <tbody>
     <tr>

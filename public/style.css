@@ -1,7 +1,11 @@
 .menu {
-	float: left;
-	clear: both;
-	display: inline-block;
+	margin: 0;
+	padding: 0;
+	width: 200px;
+	background-color: white;
+	position: fixed;
+	height: 100%;
+	overflow: auto;
 }
 
 .menu ul {
@@ -14,22 +18,19 @@
 }
 
 .content {
-	position: fixed;
-	right: 0;
-	width: 80%;
-	minimum-width: 800px;
-	height: 100%;
-	float: right;
-	display: inline-block;
-	overflow: auto;
+	margin-left: 200px;
 	padding: 0 20px;
+	minimum-width: 800px;
+	height: auto;
+	overflow: auto;
+	
 }
 
 table {
 	width: 75%;
 	min-width: 600px;
 	border-collapse: collapse;
-	margin-bottom: 50px;
+	margin-bottom: 10px;
 }
 
 th, td {

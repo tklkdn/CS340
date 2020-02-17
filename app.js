@@ -65,13 +65,22 @@ app.listen(3141);
 app.get('/',function(req,res,next){
   var context = {};
   var outer = [];
-  for (var i = 0; i < 50; i++) {
-	  var inner = [];
-	  for (var j = 0; j < 4; j++) {
-		  inner.push("val");
+  var genre = req.query.genre;
+  var rows;
+  genre != undefined ? rows = 15 : rows = 50
+  
+  for (var i = 0; i < rows; i++) {
+	var inner = [];
+	for (var j = 0; j < 4; j++) {
+	  if (genre == undefined) inner.push("val");  
+	  else {
+	    if (j == 2) inner.push(genre);
+		else inner.push("val");
 	  }
-	  outer.push(inner);
+	}
+	outer.push(inner);
   }
+  
   context.outer = outer;
   res.render('home', context);
 });
@@ -137,22 +146,6 @@ app.post('/add',function(req,res,next) {
 app.post('/update',function(req,res,next) {
   var context = {};
   res.render('confirm', context);
-});
-
-app.get('/query',function(req,res,next){
-  var context = {};
-  var genre = req.query.genre;
-  var outer = [];
-  for (var i = 0; i < 20; i++) {
-	var inner = [];
-	for (var j = 0; j < 4; j++) {
-	  if (j == 2) inner.push(genre);
-	  else inner.push("val");
-	}
-	  outer.push(inner);
-  }
-  context.outer = outer;
-  res.render('query', context);
 });
 
 app.use(function(req,res){
