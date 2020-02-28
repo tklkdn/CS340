@@ -4,8 +4,9 @@
   "description": "Top 50 movie database website",
   "main": "app.js",
   "dependencies": {
+    "express": "^4.17.1",
     "express-handlebars": "^3.1.0",
-    "express": "^4.17.1"
+    "mysql": "^2.18.1"
   },
   "devDependencies": {},
   "scripts": {

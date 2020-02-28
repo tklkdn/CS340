@@ -27,22 +27,8 @@ const MOVIES_ACTORS_INP = ['<select name="movie" id="" required><option disabled
 							'<select name="actor" id="" required><option disabled selected value>Select actor</option><option>val</option><option>val</option><option>val</option></select>'
 							]
 
-// Stand-ins for dummy data
-const MOVIES_DUMP = [['Plan 9 from Outer Space', 1959, 80, 4, 67, 'Fantasy'],
-					['Mac and Me', 1988, 99, 3.3, 0, 'Fantasy'],
-					['The Wicker Man', 2006, 102, 3.7, 15, 'Thriller']];
-const ACTORS_DUMP = [['Bogart', 'Humphrey'],
-					['Aniston', 'Jennifer'],
-					['Cage', 'Nicholas']];
-const AWARDS_DUMP = [[2018, 'Green Book', 'Rami Malek', 'Olivia Colman'],
-					[2017, 'The Shape of Water', 'Gary Oldman', 'Frances McDormand'],
-					[2016, 'Moonlight', 'Casey Affleck', 'Emma Stone']];
-const GENRES_DUMP = [['action'], ['comedy'], ['drama'], ['horror'], ['sci-fi'], ['thriller']];
-const MOVIES_ACTORS_DUMP = [['Mac and Me', 'Jennifer Aniston'],
-						['The Wicker Man', 'Nicholas Cage']]
-
 var express = require('express');
-// var mysql = require('./dbcon.js');
+var mysql = require('./dbcon.js');
 var path = require('path');
 
 var app = express();
@@ -62,46 +48,89 @@ app.set('view engine', 'handlebars');
 app.use('/public', express.static(path.join(__dirname, 'public')));
 app.listen(3141);
 
+// Homepage
 app.get('/',function(req,res,next){
   var context = {};
-  var outer = [];
+  
+  // Filter function - filter by genre
+  // Adds a WHERE clause to sql query
   var genre = req.query.genre;
-  var rows;
-  genre != undefined ? rows = 15 : rows = 50
+  var filter;
+  genre != undefined ? filter = 'WHERE m.genre = "' + genre + '"' : filter = '';
   
-  for (var i = 0; i < rows; i++) {
-	var inner = [];
-	for (var j = 0; j < 4; j++) {
-	  if (genre == undefined) inner.push("val");  
-	  else {
-	    if (j == 2) inner.push(genre);
-		else inner.push("val");
-	  }
+  // SQL query
+  // Queries Top 50 movies in DB
+  mysql.pool.query('SELECT movieTitle, releaseYear, m.genre, IF(bestPicture IS NOT NULL, "YES", "NO"), ((ratingIMDB * 10) + ratingRottenTomatoes)/2 AS score FROM Movies m INNER JOIN Genres g ON m.genre = g.genre LEFT JOIN OscarWinners o ON m.movieID = o.bestPicture ' + filter + 'ORDER BY score DESC LIMIT 50', function(err, rows, fields){
+    if(err){return next(err)};
+	
+	var data = [];
+	for (let p in rows) {
+	  data.push(rows[p]);
 	}
-	outer.push(inner);
-  }
-  
-  context.outer = outer;
-  res.render('home', context);
+	
+	context.dataList = data;
+	res.render('home', context);
+  });
 });
 
+// View each individual table
+// Data is dynamically populated depending on which link is selected
+// The 'view' page shares the same template
 app.get('/view',function(req,res,next){
   var context = {};
   var colList = [];
+  var sqlQuery;
   var table = req.query.table;
   context.table = table;
-  context.tableTitle = table.charAt(0).toUpperCase() + table.slice(1);
+  context.tableTitle = table.charAt(0).toUpperCase() + table.slice(1);		// Page title
   
+  // Columns and SQL query are selected depending on value of "table" variable
   switch (table) {
-	  case "movies": context.colList = MOVIES_COL; context.dataList = MOVIES_DUMP; break;
-	  case "actors": context.colList = ACTORS_COL; context.dataList = ACTORS_DUMP; break;
-	  case "awards": context.colList = AWARDS_COL; context.dataList = AWARDS_DUMP; break;
-	  case "genres": context.colList = GENRES_COL; context.dataList = GENRES_DUMP; break;
-	  case "movies-actors": context.colList = MOVIES_ACTORS_COL; context.dataList = MOVIES_ACTORS_DUMP; break;
+	  // Movies table
+	  case "movies": {
+		  context.colList = MOVIES_COL; 
+		  sqlQuery = 'SELECT movieTitle, releaseYear, runtime, ratingIMDB, ratingRottenTomatoes, genre FROM Movies ORDER BY movieTitle ASC';
+		  break;
+		  }
+	  // Actors table
+	  case "actors": {
+		  context.colList = ACTORS_COL; 
+		  sqlQuery = 'SELECT actorLastName, actorFirstName FROM Actors ORDER BY actorLastName ASC'; 
+		  break;
+		  }
+	  // OscarWinners table
+	  case "awards": {
+		  context.colList = AWARDS_COL;
+		  sqlQuery = 'SELECT o.year, (SELECT movieTitle FROM Movies INNER JOIN OscarWinners ON Movies.movieID = OscarWinners.bestPicture WHERE OscarWinners.year = o.year), (SELECT CONCAT(actorFirstName, " ", actorLastName) FROM Actors INNER JOIN OscarWinners ON Actors.actorID = OscarWinners.leadActor WHERE OscarWinners.year = o.year), (SELECT CONCAT(actorFirstName, " ", actorLastName) FROM Actors INNER JOIN OscarWinners ON Actors.actorID = OscarWinners.leadActress WHERE OscarWinners.year = o.year) FROM OscarWinners o ORDER BY year DESC';
+		  break;
+		  }
+	  // Genres table
+	  case "genres": {
+		  context.colList = GENRES_COL;
+		  sqlQuery = 'SELECT * FROM Genres ORDER BY genre ASC';
+		  break;
+		  }
+	  // Movies_Actors table
+	  case "movies-actors": {
+		  context.colList = MOVIES_ACTORS_COL;
+		  sqlQuery = 'SELECT movieTitle, CONCAT(actorFirstName, " ", actorLastName) FROM Movies_Actors ma INNER JOIN Movies m ON ma.movieID = m.movieID INNER JOIN Actors a ON ma.actorID = a.actorID ORDER BY movieTitle ASC';
+		  break;
+		  }
 	  default: break;
   }
 
-  res.render('view', context);
+  // SQL query
+  mysql.pool.query(sqlQuery, function(err, rows, fields){
+    if(err){return next(err)};
+	
+	var data = [];
+	for (let p in rows) {
+	  data.push(rows[p]);
+	}
+	
+	context.dataList = data;
+	res.render('view', context);
+  });
 });
 
 app.get('/add',function(req,res,next){
@@ -110,11 +139,11 @@ app.get('/add',function(req,res,next){
   var table = req.query.table;
   
   switch (table) {
-	  case "movies": context.colList = MOVIES_INP; context.dataList = MOVIES_DUMP; break;
-	  case "actors": context.colList = ACTORS_INP; context.dataList = ACTORS_DUMP; break;
-	  case "awards": context.colList = AWARDS_INP; context.dataList = AWARDS_DUMP; break;
-	  case "genres": context.colList = GENRES_INP; context.dataList = GENRES_DUMP; break;
-	  case "movies-actors": context.colList = MOVIES_ACTORS_INP; context.dataList = MOVIES_ACTORS_DUMP; break;
+	  case "movies": context.colList = MOVIES_INP; break;
+	  case "actors": context.colList = ACTORS_INP; break;
+	  case "awards": context.colList = AWARDS_INP; break;
+	  case "genres": context.colList = GENRES_INP; break;
+	  case "movies-actors": context.colList = MOVIES_ACTORS_INP; break;
 	  default: break;
   }
   
@@ -127,11 +156,11 @@ app.get('/update',function(req,res,next){
   var table = req.query.table;
   
   switch (table) {
-	  case "movies": context.colList = MOVIES_INP; context.dataList = MOVIES_DUMP; break;
-	  case "actors": context.colList = ACTORS_INP; context.dataList = ACTORS_DUMP; break;
-	  case "awards": context.colList = AWARDS_INP; context.dataList = AWARDS_DUMP; break;
-	  case "genres": context.colList = GENRES_INP; context.dataList = GENRES_DUMP; break;
-	  case "movies-actors": context.colList = MOVIES_ACTORS_INP; context.dataList = MOVIES_ACTORS_DUMP; break;
+	  case "movies": context.colList = MOVIES_INP; break;
+	  case "actors": context.colList = ACTORS_INP; break;
+	  case "awards": context.colList = AWARDS_INP; break;
+	  case "genres": context.colList = GENRES_INP; break;
+	  case "movies-actors": context.colList = MOVIES_ACTORS_INP; break;
 	  default: break;
   }
   
