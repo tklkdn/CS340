@@ -1,0 +1,13 @@
+<select name="movie" id="" required>
+	<option disabled selected value>Select movie</option>
+	{{#each movieList}}
+		<option>{{{this.movieTitle}}}</option>
+	{{/each}}
+	</select><br><br>
+
+<select name="actor" id="" required>
+	<option disabled selected value>Select actor</option>
+	{{#each actorList}}
+		<option>{{{this.actor}}}</option>
+	{{/each}}
+</select><br><br>

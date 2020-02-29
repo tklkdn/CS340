@@ -20,14 +20,14 @@
 .content {
 	margin-left: 200px;
 	padding: 0 20px;
-	minimum-width: 800px;
+	min-width: 800px;
 	height: auto;
 	overflow: auto;
 	
 }
 
 table {
-	width: 75%;
+	max-width: 75%;
 	min-width: 600px;
 	border-collapse: collapse;
 	margin-bottom: 10px;

@@ -1,41 +1,12 @@
-const MOVIES_COL = ['Movie title', 'Release year', 'Runtime', 'IMDB rating', 'RT rating', 'Genre'];
-const ACTORS_COL = ['Last name', 'First name'];
-const AWARDS_COL = ['Year', 'Best Picture', 'Lead Actor', 'Lead Actress'];
-const GENRES_COL = ['Genre'];
-const MOVIES_ACTORS_COL = ['Movie title', 'Actor'];
-
-// For use in dynamic input form
-const MOVIES_INP = ['<input type="text" name="movie-title" id="" maxlength="255" required placeholder="Movie title">',
-					'<input type="number" name="release-year" id="" required placeholder="Release year">',
-					'<input type="number" name="runtime" id="" required placeholder="Runtime" min="0" step="1">',
-					'<input type="number" name="imdb-rating" id="" placeholder="IMDB rating" min="0" max="10" step="0.1">',
-					'<input type="number" name="rt-rating" id="" placeholder="RT rating" min="0" max="100" step="1">',
-					'<select name="genre" id="" required><option disabled selected value>Select genre</option><option>action</option><option>comedy</option><option>drama</option></select>'
-					];
-					
-const ACTORS_INP = ['<input type="text" name="last-name" id="" maxlength="255" required placeholder="Last name">',
-					'<input type="text" name="first-name" id="" maxlength="255" required placeholder="First name">'
-					];
-const AWARDS_INP = ['<input type="number" name="year" id="" required placeholder="Year" min="0" step="1">',
-					'<select name="best-picture" id="" required><option disabled selected value>Select best picture</option><option>val</option><option>val</option><option>val</option></select>',
-					'<select name="lead-actor" id="" required><option disabled selected value>Select lead actor</option><option>val</option><option>val</option><option>val</option></select>',
-					'<select name="lead-actress" id="" required><option disabled selected value>Select lead actress</option><option>val</option><option>val</option><option>val</option></select>'
-					];
-const GENRES_INP = ['<input type="text" name="genre" id="" maxlength="255" required placeholder="Genre">'
-					];
-const MOVIES_ACTORS_INP = ['<select name="movie" id="" required><option disabled selected value>Select movie</option><option>val</option><option>val</option><option>val</option></select>',
-							'<select name="actor" id="" required><option disabled selected value>Select actor</option><option>val</option><option>val</option><option>val</option></select>'
-							]
-
 var express = require('express');
 var mysql = require('./dbcon.js');
 var path = require('path');
-
 var app = express();
 
 var handlebars = require('express-handlebars').create(
   {
     defaultLayout: 'main',
+	partialsDir: path.join(__dirname, '/views/partials'),
     helpers: {
 	  inc: function(val, options) {return parseInt(val) + 1;}
 	}
@@ -52,6 +23,18 @@ app.listen(3141);
 app.get('/',function(req,res,next){
   var context = {};
   
+  // Get values for filter dropdown from Genres table
+  mysql.pool.query('SELECT genre FROM Genres ORDER BY genre ASC', function(err, rows, fields) {
+    if (err){return next(err)};
+	
+	var allGenres = [];
+	for (let p in rows) {
+	  allGenres.push(rows[p].genre);
+	}
+	
+	context.genreList = allGenres;
+  });
+  
   // Filter function - filter by genre
   // Adds a WHERE clause to sql query
   var genre = req.query.genre;
@@ -60,7 +43,7 @@ app.get('/',function(req,res,next){
   
   // SQL query
   // Queries Top 50 movies in DB
-  mysql.pool.query('SELECT movieTitle, releaseYear, m.genre, IF(bestPicture IS NOT NULL, "YES", "NO"), ((ratingIMDB * 10) + ratingRottenTomatoes)/2 AS score FROM Movies m INNER JOIN Genres g ON m.genre = g.genre LEFT JOIN OscarWinners o ON m.movieID = o.bestPicture ' + filter + 'ORDER BY score DESC LIMIT 50', function(err, rows, fields){
+  mysql.pool.query('SELECT movieTitle, releaseYear, m.genre, IF(bestPicture IS NOT NULL, "YES", "NO"), ((ratingIMDB * 10) + ratingRottenTomatoes)/2 AS score FROM Movies m INNER JOIN Genres g ON m.genre = g.genre LEFT JOIN OscarWinners o ON m.movieID = o.bestPicture ' + filter + ' ORDER BY score DESC LIMIT 50', function(err, rows, fields){
     if(err){return next(err)};
 	
 	var data = [];
@@ -88,31 +71,31 @@ app.get('/view',function(req,res,next){
   switch (table) {
 	  // Movies table
 	  case "movies": {
-		  context.colList = MOVIES_COL; 
+		  context.colList = ['Movie title', 'Release year', 'Runtime', 'IMDB rating', 'RT rating', 'Genre']; 
 		  sqlQuery = 'SELECT movieTitle, releaseYear, runtime, ratingIMDB, ratingRottenTomatoes, genre FROM Movies ORDER BY movieTitle ASC';
 		  break;
 		  }
 	  // Actors table
 	  case "actors": {
-		  context.colList = ACTORS_COL; 
+		  context.colList = ['Last name', 'First name'];
 		  sqlQuery = 'SELECT actorLastName, actorFirstName FROM Actors ORDER BY actorLastName ASC'; 
 		  break;
 		  }
 	  // OscarWinners table
 	  case "awards": {
-		  context.colList = AWARDS_COL;
+		  context.colList = ['Year', 'Best Picture', 'Lead Actor', 'Lead Actress'];
 		  sqlQuery = 'SELECT o.year, (SELECT movieTitle FROM Movies INNER JOIN OscarWinners ON Movies.movieID = OscarWinners.bestPicture WHERE OscarWinners.year = o.year), (SELECT CONCAT(actorFirstName, " ", actorLastName) FROM Actors INNER JOIN OscarWinners ON Actors.actorID = OscarWinners.leadActor WHERE OscarWinners.year = o.year), (SELECT CONCAT(actorFirstName, " ", actorLastName) FROM Actors INNER JOIN OscarWinners ON Actors.actorID = OscarWinners.leadActress WHERE OscarWinners.year = o.year) FROM OscarWinners o ORDER BY year DESC';
 		  break;
 		  }
 	  // Genres table
 	  case "genres": {
-		  context.colList = GENRES_COL;
+		  context.colList = ['Genre'];
 		  sqlQuery = 'SELECT * FROM Genres ORDER BY genre ASC';
 		  break;
 		  }
 	  // Movies_Actors table
 	  case "movies-actors": {
-		  context.colList = MOVIES_ACTORS_COL;
+		  context.colList = ['Movie title', 'Actor'];
 		  sqlQuery = 'SELECT movieTitle, CONCAT(actorFirstName, " ", actorLastName) FROM Movies_Actors ma INNER JOIN Movies m ON ma.movieID = m.movieID INNER JOIN Actors a ON ma.actorID = a.actorID ORDER BY movieTitle ASC';
 		  break;
 		  }
@@ -133,21 +116,62 @@ app.get('/view',function(req,res,next){
   });
 });
 
-app.get('/add',function(req,res,next){
+// Add a row to a table
+// Fields are dynamically generated through handlebar partials
+app.get('/add',function(req,res,next){  
   var context = {};
-  var colList = [];
   var table = req.query.table;
+  var callbackCount = 0;
+
+  // Get all genres
+  function getGenres(res, mysql, context, complete) {
+	mysql.pool.query('SELECT genre FROM Genres ORDER BY genre ASC', function(err, rows, fields){
+	  if(err){return next(err)};
+	  context.genreList = rows;
+	  complete();
+	})
+  }
+
+  // Get all movie titles
+  function getMovies(res, mysql, context, complete) {
+	mysql.pool.query('SELECT movieTitle FROM Movies ORDER BY movieTitle ASC', function(err, rows, fields){
+	  if(err){return next(err)};
+	  context.movieList = rows;
+	  complete();
+	})
+  }
   
+  // Get all actor names
+  function getActors(res, mysql, context, complete) {
+	mysql.pool.query('SELECT CONCAT(actorFirstName, " ", actorLastName) AS actor FROM Actors ORDER BY actorFirstName ASC', function(err, rows, fields){
+	  if(err){return next(err)};
+	  context.actorList = rows;
+	  complete();
+	})
+  }
+
+  // Form fields are different depending on which table is selected for adding new row
+  // The partial to resolve is calculated here
   switch (table) {
-	  case "movies": context.colList = MOVIES_INP; break;
-	  case "actors": context.colList = ACTORS_INP; break;
-	  case "awards": context.colList = AWARDS_INP; break;
-	  case "genres": context.colList = GENRES_INP; break;
-	  case "movies-actors": context.colList = MOVIES_ACTORS_INP; break;
+	  case "movies": context.whichPartial = () => { return 'addMovie' }; break;
+	  case "actors": context.whichPartial = () => { return 'addActor' }; break;
+	  case "awards": context.whichPartial = () => { return 'addAward' }; break;
+	  case "genres": context.whichPartial = () => { return 'addGenre' }; break;
+	  case "movies-actors": context.whichPartial = function() { return 'addMovieActor' }; break;
 	  default: break;
   }
   
-  res.render('add', context);
+  // Call all mysql queries used to populate dropdown fields
+  getGenres(res, mysql, context, complete);
+  getMovies(res, mysql, context, complete);
+  getActors(res, mysql, context, complete);
+  
+  function complete(){
+    callbackCount++;
+    if(callbackCount >= 3){
+      res.render('add', context);
+    }
+  }
 });
 
 app.get('/update',function(req,res,next){

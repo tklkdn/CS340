@@ -1,0 +1,16 @@
+<input type="text" name="movie-title" id="" maxlength="255" required placeholder="Movie title"><br><br>
+
+<input type="number" name="release-year" id="" required placeholder="Release year"><br><br>
+
+<input type="number" name="runtime" id="" required placeholder="Runtime" min="0" step="1"><br><br>
+
+<input type="number" name="imdb-rating" id="" placeholder="IMDB rating" min="0" max="10" step="0.1"><br><br>
+
+<input type="number" name="rt-rating" id="" placeholder="RT rating" min="0" max="100" step="1"><br><br>
+
+<select name="genre" id="" required>
+	<option disabled selected value>Select genre (optional)</option>
+	{{#each genreList}}
+		<option>{{{this.genre}}}</option>
+	{{/each}}
+</select><br><br>

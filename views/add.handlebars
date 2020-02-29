@@ -1,10 +1,7 @@
 <h1>Add New Entry</h1>
-
-<form method="post" id="add-movie">
+<form method="post" id="add-row">
 	<fieldset>
-		{{#each colList}}
-		  {{{this}}}<br><br>
-		{{/each}}
-		<button type="submit" form="add-movie" id="">Submit</button>
+		{{> (whichPartial)}}
+		<button type="submit" form="add-row" id="">Submit</button>
 	</fieldset>
 </form>

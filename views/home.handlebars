@@ -4,7 +4,11 @@
 
 <form method="get" id="filter">
   <label for="genre">Filter by genre</label><br>
-  <select name="genre" id="" required><option disabled selected value>Select genre</option><option>comedy</option><option>drama</option><option>sci-fi</option></select>
+  <select name="genre" id="" required><option disabled selected value>Select genre</option>
+  {{#each genreList}}
+    <option>{{this}}</option>
+  {{/each}}
+  </select>
   <button type="submit" form="filter" id="">Filter</button>
 </form>
 
@@ -30,3 +34,5 @@
 	{{/each}}
   </tbody>
 </table>
+
+<br><br><br>
