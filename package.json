@@ -4,6 +4,7 @@
   "description": "Top 50 movie database website",
   "main": "app.js",
   "dependencies": {
+    "body-parser": "^1.19.0",
     "express": "^4.17.1",
     "express-handlebars": "^3.1.0",
     "mysql": "^2.18.1"

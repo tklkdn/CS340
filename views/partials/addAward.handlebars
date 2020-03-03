@@ -1,22 +1,23 @@
 <input type="number" name="year" id="" required placeholder="Year" min="0" step="1"><br><br>
 
-<select name="best-picture" id="" required>
+<select name="best_picture" id="" required>
 	<option disabled selected value>Select best picture</option>
 	{{#each movieList}}
 		<option>{{{this.movieTitle}}}</option>
 	{{/each}}
 </select><br><br>
 
-<select name="lead-actor" id="" required>
+<select name="lead_actor" id="" required>
 	<option disabled selected value>Select lead actor</option>
 	{{#each actorList}}
 		<option>{{{this.actor}}}</option>
 	{{/each}}
 </select><br><br>
 
-<select name="lead-actress" id="" required>
+<select name="lead_actress" id="" required>
 	<option disabled selected value>Select lead actress</option>
 	{{#each actorList}}
 		<option>{{{this.actor}}}</option>
 	{{/each}}
 </select><br><br>
+<input type="hidden" name="add" value="award">

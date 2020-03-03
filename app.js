@@ -2,6 +2,7 @@ var express = require('express');
 var mysql = require('./dbcon.js');
 var path = require('path');
 var app = express();
+var bodyParser = require('body-parser')
 
 var handlebars = require('express-handlebars').create(
   {
@@ -13,11 +14,17 @@ var handlebars = require('express-handlebars').create(
   }
 );
 
+var urlencodedParser = bodyParser.urlencoded({ extended: false })
+
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
+app.set('port', 3141);
 
 app.use('/public', express.static(path.join(__dirname, 'public')));
-app.listen(3141);
+
+app.listen(app.get('port'), function(){
+  console.log('Handlebars/Node started on http://flipX.engr.oregonstate.edu:' + app.get('port') + '; press Ctrl-C to terminate.');
+});
 
 // Homepage
 app.get('/',function(req,res,next){
@@ -191,8 +198,47 @@ app.get('/update',function(req,res,next){
   res.render('update', context);
 });
 
-app.post('/add',function(req,res,next) {
+app.post('/add', urlencodedParser, function(req,res,next) {
   var context = {};
+  console.log(req);
+  var add = req.body.add;
+  
+  switch (add) {
+  	case "actor":
+  		var sql = `INSERT INTO Actors (actorLastName, actorFirstName) VALUES (?, ?)`;
+  		mysql.pool.query(sql, [req.body.lname , req.body.fname], function (err, data) {if (err) {} else {}});
+  	break;
+
+  	case "genre":
+  		var sql = `INSERT INTO Genres (genre) VALUES (?)`;
+		mysql.pool.query(sql, [req.body.genre], function (err, data) {if (err) {} else {}});
+  	break;
+  	
+  	case "movie":
+  		console.log(req.body);
+  		var sql = `INSERT INTO Movies (movieTitle, releaseYear, runtime, ratingIMDB, ratingRottenTomatoes, genre) VALUES (?, ?, ?, ?, ?, ?)`;
+  		mysql.pool.query(sql, [req.body.movie_title, req.body.release_year, req.body.runtime, req.body.imdb_rating, req.body.rt_rating, req.body.genre], function (err, data) {if (err) {} else {}});
+  	break;
+  	
+  	case "award":
+  		var firstNameActor = req.body.lead_actor.split(' ').slice(0, -1).join(' ');
+		var lastNameActor = req.body.lead_actor.split(' ').slice(-1).join(' ');
+		var firstNameActress = req.body.lead_actress.split(' ').slice(0, -1).join(' ');
+		var lastNameActress = req.body.lead_actress.split(' ').slice(-1).join(' ');
+  		var sql = `INSERT INTO OscarWinners (year, bestPicture, leadActor, leadActress) VALUES (?, (SELECT movieID FROM Movies WHERE movieTitle=?), (SELECT actorID FROM Actors WHERE actorLastName=? AND actorFirstName=?), (SELECT actorID FROM Actors WHERE actorLastName=? AND actorFirstName=?))`;
+  		mysql.pool.query(sql, [req.body.year, req.body.best_picture, lastNameActor,firstNameActor, lastNameActress, firstNameActress], function (err, data) {if (err) {} else {}});
+  	break;
+  	
+  	case "movieactor":
+  		var firstName = req.body.actor.split(' ').slice(0, -1).join(' ');
+		var lastName = req.body.actor.split(' ').slice(-1).join(' ');
+  		var sql = `INSERT INTO Movies_Actors (movieID, actorID) VALUES ((SELECT movieID FROM Movies WHERE movieTitle=?), (SELECT actorID FROM Actors WHERE actorLastName=? AND actorFirstName=?))`;
+		mysql.pool.query(sql, [req.body.movie, lastName, firstName], function (err, data) {if (err) {} else {}});
+  	break;
+
+  	default: break;
+  }
+
   res.render('confirm', context);
 });
 
