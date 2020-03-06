@@ -1,5 +1,5 @@
 <h1>{{tableTitle}}</h1>
-<table border="1">
+<table border="1" class="{{firstCol}}">
   <tbody>
     <tr>
 	  {{#each colList}}
@@ -13,7 +13,7 @@
         {{#each this}}
 		  <td>{{this}}</td>
 		{{/each}}
-	    <td><a href="/update?table={{../table}}">Edit</a></td>
+	    <td><a href="/update?table={{../table}}&ID={{this.ID}}">Edit</a></td>
 	    <td><a href="#" onclick="confirmDel()">Delete</a></td>
 	  </tr>
 	{{/each}}

@@ -70,6 +70,7 @@ app.get('/view',function(req,res,next){
   var context = {};
   var colList = [];
   var sqlQuery;
+  context.firstCol = "";
   var table = req.query.table;
   context.table = table;
   context.tableTitle = table.charAt(0).toUpperCase() + table.slice(1);		// Page title
@@ -78,32 +79,35 @@ app.get('/view',function(req,res,next){
   switch (table) {
 	  // Movies table
 	  case "movies": {
-		  context.colList = ['Movie title', 'Release year', 'Runtime', 'IMDB rating', 'RT rating', 'Genre']; 
-		  sqlQuery = 'SELECT movieTitle, releaseYear, runtime, ratingIMDB, ratingRottenTomatoes, genre FROM Movies ORDER BY movieTitle ASC';
+		  context.colList = ['ID', 'Movie title', 'Release year', 'Runtime', 'IMDB rating', 'RT rating', 'Genre']; 
+		  sqlQuery = 'SELECT movieID AS ID, movieTitle, releaseYear, runtime, ratingIMDB, ratingRottenTomatoes, genre FROM Movies ORDER BY movieTitle ASC';
+		  context.firstCol = "hide-first-col";
 		  break;
 		  }
 	  // Actors table
 	  case "actors": {
-		  context.colList = ['Last name', 'First name'];
-		  sqlQuery = 'SELECT actorLastName, actorFirstName FROM Actors ORDER BY actorLastName ASC'; 
+		  context.colList = ['ID', 'Last name', 'First name'];
+		  sqlQuery = 'SELECT actorID AS ID, actorLastName, actorFirstName FROM Actors ORDER BY actorLastName ASC'; 
+		  context.firstCol = "hide-first-col";
 		  break;
 		  }
 	  // OscarWinners table
 	  case "awards": {
 		  context.colList = ['Year', 'Best Picture', 'Lead Actor', 'Lead Actress'];
-		  sqlQuery = 'SELECT o.year, (SELECT movieTitle FROM Movies INNER JOIN OscarWinners ON Movies.movieID = OscarWinners.bestPicture WHERE OscarWinners.year = o.year), (SELECT CONCAT(actorFirstName, " ", actorLastName) FROM Actors INNER JOIN OscarWinners ON Actors.actorID = OscarWinners.leadActor WHERE OscarWinners.year = o.year), (SELECT CONCAT(actorFirstName, " ", actorLastName) FROM Actors INNER JOIN OscarWinners ON Actors.actorID = OscarWinners.leadActress WHERE OscarWinners.year = o.year) FROM OscarWinners o ORDER BY year DESC';
+		  sqlQuery = 'SELECT o.year AS ID, (SELECT movieTitle FROM Movies INNER JOIN OscarWinners ON Movies.movieID = OscarWinners.bestPicture WHERE OscarWinners.year = o.year), (SELECT CONCAT(actorFirstName, " ", actorLastName) FROM Actors INNER JOIN OscarWinners ON Actors.actorID = OscarWinners.leadActor WHERE OscarWinners.year = o.year), (SELECT CONCAT(actorFirstName, " ", actorLastName) FROM Actors INNER JOIN OscarWinners ON Actors.actorID = OscarWinners.leadActress WHERE OscarWinners.year = o.year) FROM OscarWinners o ORDER BY year DESC';
 		  break;
 		  }
 	  // Genres table
 	  case "genres": {
 		  context.colList = ['Genre'];
-		  sqlQuery = 'SELECT * FROM Genres ORDER BY genre ASC';
+		  sqlQuery = 'SELECT genre AS ID FROM Genres ORDER BY genre ASC';
 		  break;
 		  }
 	  // Movies_Actors table
 	  case "movies-actors": {
-		  context.colList = ['Movie title', 'Actor'];
-		  sqlQuery = 'SELECT movieTitle, CONCAT(actorFirstName, " ", actorLastName) FROM Movies_Actors ma INNER JOIN Movies m ON ma.movieID = m.movieID INNER JOIN Actors a ON ma.actorID = a.actorID ORDER BY movieTitle ASC';
+		  context.colList = ['ID', 'Movie title', 'Actor'];
+		  sqlQuery = 'SELECT m.movieID AS ID, movieTitle, CONCAT(actorFirstName, " ", actorLastName) FROM Movies_Actors ma INNER JOIN Movies m ON ma.movieID = m.movieID INNER JOIN Actors a ON ma.actorID = a.actorID ORDER BY movieTitle ASC';
+		  context.firstCol = "hide-first-col";
 		  break;
 		  }
 	  default: break;
@@ -184,18 +188,46 @@ app.get('/add',function(req,res,next){
 app.get('/update',function(req,res,next){
   var context = {};
   var colList = [];
+  var sqlQuery;
   var table = req.query.table;
+  var ID = req.query.ID;
+
+  // Need to make sure ID is not empty
   
   switch (table) {
-	  case "movies": context.colList = MOVIES_INP; break;
-	  case "actors": context.colList = ACTORS_INP; break;
-	  case "awards": context.colList = AWARDS_INP; break;
-	  case "genres": context.colList = GENRES_INP; break;
-	  case "movies-actors": context.colList = MOVIES_ACTORS_INP; break;
+	  case "movies": {
+		  context.whichPartial = () => { return 'addMovie' };
+		  sqlQuery = "SELECT * FROM Movies WHERE movieID=" + ID;
+		  break;
+		  }
+	  case "actors": {
+		  context.whichPartial = () => { return 'addActor' };
+		  sqlQuery = "SELECT * FROM Actors WHERE actorID=" + ID;
+		  break;
+		  }
+	  case "awards": {
+		  context.whichPartial = () => { return 'addAward' };
+		  sqlQuery = "SELECT * FROM OscarWinners WHERE year=" + ID;
+		  break;
+		  }
+	  case "genres": {
+		  context.whichPartial = () => { return 'addGenre' };
+		  sqlQuery = "SELECT * FROM Genres WHERE genre='" + ID + "'";
+		  break;
+		  }
+	  case "movies-actors": {
+		  context.whichPartial = function() { return 'addMovieActor' };
+		  sqlQuery = "SELECT * FROM Movies_Actors WHERE movieID=" + ID;
+		  break;
+		  }
 	  default: break;
   }
   
-  res.render('update', context);
+  mysql.pool.query(sqlQuery, function(err, rows, fields){
+    if(err){return next(err)};
+	context.rowData = rows[0];
+	res.render('update', context);
+  });
 });
 
 app.post('/add', urlencodedParser, function(req,res,next) {

@@ -3,9 +3,7 @@
 
 <form method="post" id="update-movie">
 	<fieldset>
-		{{#each colList}}
-		  {{{this}}}<br><br>
-		{{/each}}
+		{{> (whichPartial)}}
 		<button type="submit" form="update-movie" id="">Submit</button>
 	</fieldset>
 </form>

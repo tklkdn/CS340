@@ -1,12 +1,12 @@
-<input type="text" name="movie_title" maxlength="255" required placeholder="Movie title"><br><br>
+<input type="text" name="movie_title" maxlength="255" required placeholder="Movie title" value="{{rowData.movieTitle}}"><br><br>
 
-<input type="number" name="release_year" required placeholder="Release year"><br><br>
+<input type="number" name="release_year" required placeholder="Release year" value="{{rowData.releaseYear}}"><br><br>
 
-<input type="number" name="runtime" required placeholder="Runtime" min="0" step="1"><br><br>
+<input type="number" name="runtime" required placeholder="Runtime" min="0" step="1" value="{{rowData.runtime}}"><br><br>
 
-<input type="number" name="imdb_rating" placeholder="IMDB rating" min="0" max="10" step="0.1"><br><br>
+<input type="number" name="imdb_rating" placeholder="IMDB rating" min="0" max="10" step="0.1" value="{{rowData.ratingIMDB}}"><br><br>
 
-<input type="number" name="rt_rating" placeholder="RT rating" min="0" max="100" step="1"><br><br>
+<input type="number" name="rt_rating" placeholder="RT rating" min="0" max="100" step="1" value="{{rowData.ratingRottenTomatoes}}"><br><br>
 
 <select name="genre" id="" required>
 	<option disabled selected value>Select genre (optional)</option>
