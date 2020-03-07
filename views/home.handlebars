@@ -4,10 +4,11 @@
 
 <form method="get" id="filter">
   <label for="genre">Filter by genre</label><br>
-  <select name="genre" id="" required><option disabled selected value>Select genre</option>
-  {{#each genreList}}
-    <option>{{this}}</option>
-  {{/each}}
+  <select name="genre" id="" required>
+    <option selected>Select genre</option>
+    {{#each genreList}}
+      <option>{{this.genre}}</option>
+    {{/each}}
   </select>
   <button type="submit" form="filter" id="">Filter</button>
 </form>
@@ -24,7 +25,7 @@
 	  <th>Won Best Picture</th>
 	  <th>Our score</th>
 	</tr>
-	{{#each dataList}}
+	{{#each movieList}}
       <tr>
 	    <td>{{inc @index}}
         {{#each this}}

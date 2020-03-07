@@ -13,8 +13,8 @@
         {{#each this}}
 		  <td>{{this}}</td>
 		{{/each}}
-	    <td><a href="/update?table={{../table}}&ID={{this.ID}}">Edit</a></td>
-	    <td><a href="#" onclick="confirmDel()">Delete</a></td>
+	    <td><a href="/update?table={{../table}}&ID={{this.ID}}&ID2={{this.ID2}}">Edit</a></td>
+	    <td><a href="#" onclick="confirmDel({{this.ID}},{{this.ID2}})">Delete</a></td>
 	  </tr>
 	{{/each}}
   </tbody>
@@ -23,9 +23,9 @@
 <br><br><br>
 
 <script>
-  var confirmDel = () => {
+  var confirmDel = function(id, id2) {
     if (confirm("Are you sure you would like to delete this item?")) {
-	  console.log("Item deleted");
+	  console.log("ID", id, id2, "deleted");
 	} else {
 	  console.log("Item not deleted");
 	}
