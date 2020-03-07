@@ -1,5 +1,5 @@
 <h1>Update Entry</h1>
-<p>Values from selected row will populate each non-empty field</p> 
+<p>Update the entry selected</p> 
 
 <form method="post" id="update-movie">
 	<fieldset>
@@ -7,3 +7,12 @@
 		<button type="submit" form="update-movie" id="">Submit</button>
 	</fieldset>
 </form>
+
+<script>
+	removeSelected('default');
+	
+	function removeSelected(id) {
+		var el = document.getElementById(id)
+		if (el != null || el != undefined) el.removeAttribute("selected");
+	}
+</script>

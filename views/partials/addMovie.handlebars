@@ -8,10 +8,10 @@
 
 <input type="number" name="rt_rating" placeholder="RT rating" min="0" max="100" step="1" value="{{rowData.ratingRottenTomatoes}}"><br><br>
 
-<select name="genre" id="">
-	<option disabled selected value>Select genre (optional)</option>
+<select name="genre" id="select-movie-genre">
+	<option disabled selected value id="default">Select genre (optional)</option>
 	{{#each genreList}}
-		<option>{{{this.genre}}}</option>
+		<option value="{{this.genre}}" {{selected ../genre this.genre}}>{{{this.genre}}}</option>
 	{{/each}}
 </select><br><br>
 

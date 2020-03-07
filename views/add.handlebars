@@ -5,3 +5,15 @@
 		<input type="submit" value="Submit">
 	</fieldset>
 </form>
+
+<script>
+	addSelected('default');
+	
+	function addSelected(id) {
+		var el = document.getElementById(id)
+		if (el != null || el != undefined) {
+			var att = document.createAttribute("selected");
+			document.getElementById(id).setAttributeNode(att); 
+		}
+	}
+</script>

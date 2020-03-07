@@ -9,7 +9,8 @@ var handlebars = require('express-handlebars').create(
     defaultLayout: 'main',
 	partialsDir: path.join(__dirname, '/views/partials'),
     helpers: {
-	  inc: function(val, options) {return parseInt(val) + 1;}
+	  inc: function(val, options) {return parseInt(val) + 1;},
+	  selected: function(val, options) {if (val == options && val != undefined) return "selected"; else return "";}
 	}
   }
 );
@@ -26,19 +27,45 @@ app.listen(app.get('port'), function(){
   console.log('Handlebars/Node started on http://flipX.engr.oregonstate.edu:' + app.get('port') + '; press Ctrl-C to terminate.');
 });
 
+// Get all genres
+function getGenres(res, mysql, context, complete) {
+  mysql.pool.query('SELECT genre FROM Genres ORDER BY genre ASC', function(err, rows, fields){
+	if(err){return err};
+	context.genreList = rows;
+	complete();
+  });
+}
+
+// Get all movie titles
+function getMovies(res, mysql, context, complete) {
+  mysql.pool.query('SELECT movieTitle FROM Movies ORDER BY movieTitle ASC', function(err, rows, fields){
+	if(err){return err};
+	context.movieList = rows;
+	complete();
+  })
+}
+
+// Get all actor names
+function getActors(res, mysql, context, complete) {
+  mysql.pool.query('SELECT CONCAT(actorFirstName, " ", actorLastName) AS actor FROM Actors ORDER BY actorFirstName ASC', function(err, rows, fields){
+	if(err){return err};
+	context.actorList = rows;
+	complete();
+  })
+}
+
+function duplicate(res, mysql, id) {
+  return mysql.pool.query("SELECT COUNT(genre) AS count FROM Genres WHERE genre = '" + id + "'", function(err, rows, fields){
+	if(err){return err};
+	if (rows[0].count > 0) return true;
+	else return false;
+  })
+}
+
 // Homepage
 app.get('/',function(req,res,next){
   var context = {};
   var callbackCount = 0;
-  
-  // Get all genres
-  function getGenres(res, mysql, context, complete) {
-	mysql.pool.query('SELECT genre FROM Genres ORDER BY genre ASC', function(err, rows, fields){
-	  if(err){return next(err)};
-	  context.genreList = rows;
-	  complete();
-	})
-  }
   
   function getTopMovies(res, mysql, context, complete) {
     // Filter function - filter by genre
@@ -84,40 +111,40 @@ app.get('/view',function(req,res,next){
   
   // Columns and SQL query are selected depending on value of "table" variable
   switch (table) {
-	  // Movies table
-	  case "movies": {
-		  context.colList = ['ID', 'Movie title', 'Release year', 'Runtime', 'IMDB rating', 'RT rating', 'Genre']; 
-		  sqlQuery = 'SELECT movieID AS ID, movieTitle, releaseYear, runtime, ratingIMDB, ratingRottenTomatoes, genre FROM Movies ORDER BY movieTitle ASC';
-		  context.firstCol = "hide-first-col";
-		  break;
-		  }
-	  // Actors table
-	  case "actors": {
-		  context.colList = ['ID', 'Last name', 'First name'];
-		  sqlQuery = 'SELECT actorID AS ID, actorLastName, actorFirstName FROM Actors ORDER BY actorLastName ASC'; 
-		  context.firstCol = "hide-first-col";
-		  break;
-		  }
-	  // OscarWinners table
-	  case "awards": {
-		  context.colList = ['Year', 'Best Picture', 'Lead Actor', 'Lead Actress'];
-		  sqlQuery = 'SELECT o.year AS ID, (SELECT movieTitle FROM Movies INNER JOIN OscarWinners ON Movies.movieID = OscarWinners.bestPicture WHERE OscarWinners.year = o.year), (SELECT CONCAT(actorFirstName, " ", actorLastName) FROM Actors INNER JOIN OscarWinners ON Actors.actorID = OscarWinners.leadActor WHERE OscarWinners.year = o.year), (SELECT CONCAT(actorFirstName, " ", actorLastName) FROM Actors INNER JOIN OscarWinners ON Actors.actorID = OscarWinners.leadActress WHERE OscarWinners.year = o.year) FROM OscarWinners o ORDER BY year DESC';
-		  break;
-		  }
-	  // Genres table
-	  case "genres": {
-		  context.colList = ['Genre'];
-		  sqlQuery = 'SELECT genre AS ID FROM Genres ORDER BY genre ASC';
-		  break;
-		  }
-	  // Movies_Actors table
-	  case "movies-actors": {
-		  context.colList = ['ID', 'ID2', 'Movie title', 'Actor'];
-		  sqlQuery = 'SELECT m.movieID AS ID, a.actorID AS ID2, movieTitle, CONCAT(actorFirstName, " ", actorLastName) FROM Movies_Actors ma INNER JOIN Movies m ON ma.movieID = m.movieID INNER JOIN Actors a ON ma.actorID = a.actorID ORDER BY movieTitle ASC';
-		  context.firstCol = "hide-first-col hide-second-col";
-		  break;
-		  }
-	  default: break;
+	// Movies table
+	case "movies": {
+	  context.colList = ['ID', 'Movie title', 'Release year', 'Runtime', 'IMDB rating', 'RT rating', 'Genre']; 
+	  sqlQuery = 'SELECT movieID AS ID, movieTitle, releaseYear, runtime, ratingIMDB, ratingRottenTomatoes, genre FROM Movies ORDER BY movieTitle ASC';
+	  context.firstCol = "hide-first-col";
+	  break;
+	  }
+	// Actors table
+	case "actors": {
+	  context.colList = ['ID', 'Last name', 'First name'];
+	  sqlQuery = 'SELECT actorID AS ID, actorLastName, actorFirstName FROM Actors ORDER BY actorLastName ASC'; 
+	  context.firstCol = "hide-first-col";
+	  break;
+	  }
+	// OscarWinners table
+	case "awards": {
+	  context.colList = ['Year', 'Best Picture', 'Lead Actor', 'Lead Actress'];
+	  sqlQuery = 'SELECT o.year AS ID, (SELECT movieTitle FROM Movies INNER JOIN OscarWinners ON Movies.movieID = OscarWinners.bestPicture WHERE OscarWinners.year = o.year), (SELECT CONCAT(actorFirstName, " ", actorLastName) FROM Actors INNER JOIN OscarWinners ON Actors.actorID = OscarWinners.leadActor WHERE OscarWinners.year = o.year), (SELECT CONCAT(actorFirstName, " ", actorLastName) FROM Actors INNER JOIN OscarWinners ON Actors.actorID = OscarWinners.leadActress WHERE OscarWinners.year = o.year) FROM OscarWinners o ORDER BY year DESC';
+	  break;
+	  }
+	// Genres table
+	case "genres": {
+	  context.colList = ['Genre'];
+	  sqlQuery = 'SELECT genre AS ID FROM Genres ORDER BY genre ASC';
+	  break;
+	  }
+	// Movies_Actors table
+	case "movies-actors": {
+	  context.colList = ['ID', 'ID2', 'Movie title', 'Actor'];
+	  sqlQuery = 'SELECT m.movieID AS ID, a.actorID AS ID2, movieTitle, CONCAT(actorFirstName, " ", actorLastName) FROM Movies_Actors ma INNER JOIN Movies m ON ma.movieID = m.movieID INNER JOIN Actors a ON ma.actorID = a.actorID ORDER BY movieTitle ASC';
+	  context.firstCol = "hide-first-col hide-second-col";
+	  break;
+	  }
+	default: break;
   }
 
   // SQL query
@@ -141,42 +168,15 @@ app.get('/add',function(req,res,next){
   var table = req.query.table;
   var callbackCount = 0;
 
-  // Get all genres
-  function getGenres(res, mysql, context, complete) {
-	mysql.pool.query('SELECT genre FROM Genres ORDER BY genre ASC', function(err, rows, fields){
-	  if(err){return next(err)};
-	  context.genreList = rows;
-	  complete();
-	})
-  }
-
-  // Get all movie titles
-  function getMovies(res, mysql, context, complete) {
-	mysql.pool.query('SELECT movieTitle FROM Movies ORDER BY movieTitle ASC', function(err, rows, fields){
-	  if(err){return next(err)};
-	  context.movieList = rows;
-	  complete();
-	})
-  }
-  
-  // Get all actor names
-  function getActors(res, mysql, context, complete) {
-	mysql.pool.query('SELECT CONCAT(actorFirstName, " ", actorLastName) AS actor FROM Actors ORDER BY actorFirstName ASC', function(err, rows, fields){
-	  if(err){return next(err)};
-	  context.actorList = rows;
-	  complete();
-	})
-  }
-
   // Form fields are different depending on which table is selected for adding new row
   // The partial to resolve is calculated here
   switch (table) {
-	  case "movies": context.whichPartial = () => { return 'addMovie' }; break;
-	  case "actors": context.whichPartial = () => { return 'addActor' }; break;
-	  case "awards": context.whichPartial = () => { return 'addAward' }; break;
-	  case "genres": context.whichPartial = () => { return 'addGenre' }; break;
-	  case "movies-actors": context.whichPartial = function() { return 'addMovieActor' }; break;
-	  default: break;
+	case "movies": context.whichPartial = () => { return 'addMovie' }; break;
+	case "actors": context.whichPartial = () => { return 'addActor' }; break;
+	case "awards": context.whichPartial = () => { return 'addAward' }; break;
+	case "genres": context.whichPartial = () => { return 'addGenre' }; break;
+	case "movies-actors": context.whichPartial = function() { return 'addMovieActor' }; break;
+	default: break;
   }
   
   // Call all mysql queries used to populate dropdown fields
@@ -192,49 +192,76 @@ app.get('/add',function(req,res,next){
   }
 });
 
+// Update an existing row in a table
+// Fields are dynamically generated through handlebar partials
 app.get('/update',function(req,res,next){
   var context = {};
   var colList = [];
   var sqlQuery;
+  var callbackCount = 0;
   var table = req.query.table;
-  var ID = req.query.ID;
+  var id = req.query.ID;
+  var id2 = req.query.ID2;
 
   // Need to make sure ID is not empty
   
-  switch (table) {
-	  case "movies": {
-		  context.whichPartial = () => { return 'addMovie' };
-		  sqlQuery = "SELECT * FROM Movies WHERE movieID=" + ID;
-		  break;
-		  }
-	  case "actors": {
-		  context.whichPartial = () => { return 'addActor' };
-		  sqlQuery = "SELECT * FROM Actors WHERE actorID=" + ID;
-		  break;
-		  }
-	  case "awards": {
-		  context.whichPartial = () => { return 'addAward' };
-		  sqlQuery = "SELECT * FROM OscarWinners WHERE year=" + ID;
-		  break;
-		  }
-	  case "genres": {
-		  context.whichPartial = () => { return 'addGenre' };
-		  sqlQuery = "SELECT * FROM Genres WHERE genre='" + ID + "'";
-		  break;
-		  }
-	  case "movies-actors": {
-		  context.whichPartial = function() { return 'addMovieActor' };
-		  sqlQuery = "SELECT * FROM Movies_Actors WHERE movieID=" + ID;
-		  break;
-		  }
-	  default: break;
+  // Get all values of selected row
+  function populateFields(res, mysql, context, sqlQuery, complete) {
+	mysql.pool.query(sqlQuery, function(err, rows, fields) {
+	  if(err){return next(err)};
+	  context.rowData = rows[0];
+	  context.movieID = rows[0].movieID;
+	  context.genre = rows[0].genre;
+	  context.actorID = rows[0].actorID;
+	  context.leadActorID = rows[0].leadActorID;
+	  context.leadActressID = rows[0].leadActressID;
+	  complete();
+	})
   }
   
-  mysql.pool.query(sqlQuery, function(err, rows, fields){
-    if(err){return next(err)};
-	context.rowData = rows[0];
-	res.render('update', context);
-  });
+  // Select which partial to use based on table
+  // SQL query to use will differ by table
+  switch (table) {
+	case "movies": {
+	  context.whichPartial = () => { return 'addMovie' };
+	  sqlQuery = "SELECT * FROM Movies WHERE movieID=" + id;
+	  break;
+	  }
+    case "actors": {
+	  context.whichPartial = () => { return 'addActor' };
+	  sqlQuery = "SELECT * FROM Actors WHERE actorID=" + id;
+	  break;
+	  }
+    case "awards": {
+	  context.whichPartial = () => { return 'addAward' };
+	  sqlQuery = "SELECT year, m.movieID, (SELECT actorID FROM Actors INNER JOIN OscarWinners ON Actors.actorID = OscarWinners.leadActor WHERE OscarWinners.year = o.year) AS leadActorID, (SELECT actorID FROM Actors INNER JOIN OscarWinners ON Actors.actorID = OscarWinners.leadActress WHERE OscarWinners.year = o.year) AS leadActressID FROM OscarWinners o INNER JOIN Movies m ON o.bestPicture = m.movieID INNER JOIN Actors a ON o.leadActor WHERE year=" + id;
+	  break;
+	  }
+	case "genres": {
+	  context.whichPartial = () => { return 'addGenre' };
+	  sqlQuery = "SELECT * FROM Genres WHERE genre='" + id + "'";
+	  break;
+	  }
+	case "movies-actors": {
+	  context.whichPartial = function() { return 'addMovieActor' };
+	  sqlQuery = "SELECT ma.movieID, ma.actorID FROM Movies_Actors ma INNER JOIN Movies m ON ma.movieID = m.movieID INNER JOIN Actors a ON a.actorID = ma.actorID WHERE ma.movieID=" + id + " AND ma.actorID=" + id2;
+	  break;
+	  }
+	default: break;
+  }
+  
+  // Call all mysql queries used to populate dropdown fields
+  getGenres(res, mysql, context, complete);
+  getMovies(res, mysql, context, complete);
+  getActors(res, mysql, context, complete);
+  populateFields(res, mysql, context, sqlQuery, complete);
+  
+  function complete(){
+    callbackCount++;
+    if(callbackCount >= 4){
+      res.render('update', context);
+    }
+  }
 });
 
 app.post('/add', urlencodedParser, function(req,res,next) {
@@ -280,6 +307,7 @@ app.post('/add', urlencodedParser, function(req,res,next) {
   res.redirect('view?table=' + add);
 });
 
+// POST request - update row in table
 app.post('/update', urlencodedParser, function(req,res,next) {
   var context = {};
   var sqlQuery, values;
@@ -287,6 +315,8 @@ app.post('/update', urlencodedParser, function(req,res,next) {
   var id = req.query.ID;
   var id2 = req.query.ID2;
   
+  // Select query to execute based on table
+  // Values to update should all be in req.body object
   switch (table) {
 	case "movies": {
       sqlQuery = "UPDATE Movies SET movieTitle = ?, releaseYear = ?, runtime = ?, ratingIMDB = ?, ratingRottenTomatoes = ?, genre = ? WHERE movieID = " + id;
@@ -299,23 +329,18 @@ app.post('/update', urlencodedParser, function(req,res,next) {
 	  break;
 	}
 	case "genres": {
-	  sqlQuery = "UPDATE Genres SET genre = ? WHERE genre = " + id;
+	  sqlQuery = "UPDATE Genres SET genre = ? WHERE genre = '" + id + "'";
 	  values = [req.body.genre];
 	  break;
 	}
 	case "awards": {
 	  sqlQuery = "Update OscarWinners SET year = ?, bestPicture = ?, leadActor = ?, leadActress = ? WHERE year = " + id;
-	  var bestPicture;
-	  var leadActor;
-	  var leadActress;
-	  values = [];
+	  values = [req.body.year, req.body.best_picture, req.body.lead_actor, req.body.lead_actress];
 	  break;
 	}
 	case "movies-actors": {
-	  sqlQuery = "Update Movies_Actors SET movieID = ?, actorID = ? WHERE movieID = " + id + "AND actorID = " + id2;
-	  var movie;
-	  var actor;
-	  values = [];
+	  sqlQuery = "Update Movies_Actors SET movieID = ?, actorID = ? WHERE movieID = " + id + " AND actorID = " + id2;
+	  values = [req.body.movie, req.body.actor];
 	  break;
 	}
 	default: break;
@@ -324,8 +349,46 @@ app.post('/update', urlencodedParser, function(req,res,next) {
   // SQL query
   mysql.pool.query(sqlQuery, values, function(err, rows, fields){
     if(err){return next(err)};
-	res.render('confirm', context);
+	res.redirect('view?table=' + table);
   });
+});
+
+app.get('/delete',function(req,res,next){
+
+var table = req.query.table;
+var ID = req.query.ID;
+
+  switch (req.query.table) {
+	  case "movies": {
+		  var sql = `DELETE FROM Movies WHERE movieID=?`;
+		  mysql.pool.query(sql, [ID], function (err, data) {if (err) {} else {}});
+		  break;
+		  }
+	  case "actors": {
+		  var sql = `DELETE FROM Actors WHERE actorID=?`;
+		  mysql.pool.query(sql, [ID], function (err, data) {if (err) {} else {}});
+		  break;
+		  }
+	  case "awards": {
+		  var sql = `DELETE FROM OscarWinners WHERE year=?`;
+		  mysql.pool.query(sql, [ID], function (err, data) {if (err) {} else {}});
+		  break;
+		  }
+	  case "genres": {
+		  var sql = `DELETE FROM Genres WHERE genre=?`;
+		  mysql.pool.query(sql, [ID], function (err, data) {if (err) {} else {}});
+		  break;
+		  }
+	  case "movies-actors": {
+		  var sql = `DELETE FROM Movies_Actors WHERE movieID=? AND actorID=?`;
+		  mysql.pool.query(sql, [ID, req.query.ID2], function (err, data) {if (err) {} else {}});
+		  break;
+		  }
+	  default: break;
+  }
+
+  res.redirect('view?table=' + table);
+
 });
 
 app.use(function(req,res){

@@ -14,7 +14,7 @@
 		  <td>{{this}}</td>
 		{{/each}}
 	    <td><a href="/update?table={{../table}}&ID={{this.ID}}&ID2={{this.ID2}}">Edit</a></td>
-	    <td><a href="#" onclick="confirmDel({{this.ID}},{{this.ID2}})">Delete</a></td>
+		<td><a href="/delete?table={{../table}}&ID={{this.ID}}&ID2={{this.ID2}}" onclick="confirmDel({{this.ID}},{{this.ID2}})">Delete</a></td>
 	  </tr>
 	{{/each}}
   </tbody>
