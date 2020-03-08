@@ -23,8 +23,19 @@
 		
 		<br><br>
 		
-		<form id="form1" name="form1" method="post">
-		Search <br><input type="search"> <input type="submit">
+		<h3>Search For Movies</h3>
+		Search by <br>
+		<form id="search" action="/search" method="post">
+			<input type="radio" name="searchoption" id="title" value="title" checked>
+			<label for="title">Movie Title</label><br>
+			<input type="radio" name="searchoption" id="year" value="year">
+			<label for="year">Release Year</label><br>
+			
+			<input type="radio" name="searchoption" id="genre" value="genre">
+			<label for="year">Genre</label><br>
+
+			<input type="text" id="search" name="search"><br>
+			<input type="submit" value="Submit">
 		</form>	
 	</div>
 

@@ -1,0 +1,23 @@
+<h1>Search Results</h1>
+<table border="1">
+  <tbody>
+    <tr>
+      <th>Rank</th>
+      <th>Movie title</th>
+      <th>Release year</th>
+      <th>Genre</th>
+      <th>Won Best Picture</th>
+      <th>Our score</th>
+    </tr>
+    {{#each movieList}}
+      <tr>
+        <td>{{inc @index}}
+        {{#each this}}
+          <td>{{this}}</td>
+        {{/each}}
+      </tr>
+    {{/each}}
+  </tbody>
+</table>
+<br><br><br>
+

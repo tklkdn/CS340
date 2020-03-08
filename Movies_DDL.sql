@@ -62,8 +62,8 @@ CREATE TABLE Movies_Actors (
 	movieID int(11) NOT NULL,
 	actorID int(11) NOT NULL,
 	PRIMARY KEY (movieID, actorID),
-	FOREIGN KEY (movieID) REFERENCES Movies(movieID),
-	FOREIGN KEY (actorID) REFERENCES Actors(actorID)
+	FOREIGN KEY (movieID) REFERENCES Movies(movieID) ON DELETE CASCADE,
+	FOREIGN KEY (actorID) REFERENCES Actors(actorID) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Dumping data for table 'Movies_Actors'

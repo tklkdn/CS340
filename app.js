@@ -38,7 +38,7 @@ function getGenres(res, mysql, context, complete) {
 
 // Get all movie titles
 function getMovies(res, mysql, context, complete) {
-  mysql.pool.query('SELECT movieTitle FROM Movies ORDER BY movieTitle ASC', function(err, rows, fields){
+  mysql.pool.query('SELECT movieID, movieTitle FROM Movies ORDER BY movieTitle ASC', function(err, rows, fields){
 	if(err){return err};
 	context.movieList = rows;
 	complete();
@@ -47,18 +47,42 @@ function getMovies(res, mysql, context, complete) {
 
 // Get all actor names
 function getActors(res, mysql, context, complete) {
-  mysql.pool.query('SELECT CONCAT(actorFirstName, " ", actorLastName) AS actor FROM Actors ORDER BY actorFirstName ASC', function(err, rows, fields){
+  mysql.pool.query('SELECT actorID, CONCAT(actorFirstName, " ", actorLastName) AS actor FROM Actors ORDER BY actorFirstName ASC', function(err, rows, fields){
 	if(err){return err};
 	context.actorList = rows;
 	complete();
   })
 }
 
-function duplicate(res, mysql, id) {
-  return mysql.pool.query("SELECT COUNT(genre) AS count FROM Genres WHERE genre = '" + id + "'", function(err, rows, fields){
+// Check for duplicates when adding or updating an entry
+function duplicate(res, mysql, context, req, complete) {
+  var sqlQuery;
+  var table = req.body.add == undefined ? req.query.table : req.body.add;
+  
+  switch(table) {
+	case "actors":
+		sqlQuery = "SELECT COUNT(actorID) AS count FROM Actors WHERE actorLastName = '" + req.body.lname + "' AND actorFirstName = '" + req.body.fname + "'";
+		break;
+	case "movies":
+		sqlQuery = "SELECT COUNT(movieID) AS count FROM Movies WHERE movieTitle = '" + req.body.movie_title + "' AND releaseYear = " + req.body.release_year;
+		break;
+	case "genres":
+		sqlQuery = "SELECT COUNT(genre) AS count FROM Genres WHERE genre = '" + req.body.genre + "'";
+		break;
+	case "awards":
+		sqlQuery = "SELECT COUNT(year) AS count FROM OscarWinners WHERE year = " + req.body.year;
+		break;
+	case "movies-actors":
+		sqlQuery = "SELECT COUNT(movieID) AS count FROM Movies_Actors WHERE movieID = " + req.body.movie + " AND actorID = " + req.body.actor;
+		break;
+	default: break;
+  }
+  
+  mysql.pool.query(sqlQuery, function(err, rows, fields){
 	if(err){return err};
-	if (rows[0].count > 0) return true;
-	else return false;
+	if (rows[0].count > 0) context.duplicate = true;
+	else context.duplicate = false;
+	complete();
   })
 }
 
@@ -161,12 +185,60 @@ app.get('/view',function(req,res,next){
   });
 });
 
+// Search
+// Fields are dynamically generated through handlebar partials
+app.post('/search', urlencodedParser, function(req,res,next) {
+  var context = {};
+  var callbackCount = 0;
+  var option = req.body.searchoption;
+  var phrase = req.body.search;
+  var sql;
+  
+  function getTopMovies(res, mysql, context, complete) {
+     
+	switch (option) {
+	  	case "title":
+	  	var sql = "SELECT movieTitle, releaseYear, m.genre, IF(bestPicture IS NOT NULL, 'Yes', 'No'), (((ratingIMDB * 10) + ratingRottenTomatoes)/2) AS score FROM (Movies m INNER JOIN Genres g ON m.genre = g.genre LEFT JOIN OscarWinners o ON m.movieID = o.bestPicture) WHERE movieTitle LIKE '%" + phrase + "%'";
+	  	break;
+
+	  	case "genre":
+	  	var sql = "SELECT movieTitle, releaseYear, m.genre, IF(bestPicture IS NOT NULL, 'Yes', 'No'), (((ratingIMDB * 10) + ratingRottenTomatoes)/2) AS score FROM (Movies m INNER JOIN Genres g ON m.genre = g.genre LEFT JOIN OscarWinners o ON m.movieID = o.bestPicture) WHERE m.genre LIKE '%" + phrase + "%'";
+	  	break;
+
+	  	case "year":
+	  	var sql = "SELECT movieTitle, releaseYear, m.genre, IF(bestPicture IS NOT NULL, 'Yes', 'No'), (((ratingIMDB * 10) + ratingRottenTomatoes)/2) AS score FROM (Movies m INNER JOIN Genres g ON m.genre = g.genre LEFT JOIN OscarWinners o ON m.movieID = o.bestPicture) WHERE releaseYear LIKE '%" + phrase + "%'";
+	  	break;
+
+	  	default: break;
+	  }
+
+	mysql.pool.query(sql, function(err, rows, fields){
+	  if(err){return next(err)};
+	  context.movieList = rows;
+	  complete();
+	});
+  }
+  
+  getTopMovies(res, mysql, context, complete);
+  
+  function complete(){
+    callbackCount++;
+    if(callbackCount >= 1){
+      res.render('search', context);
+    }
+  }
+
+});
+
 // Add a row to a table
 // Fields are dynamically generated through handlebar partials
 app.get('/add',function(req,res,next){  
   var context = {};
   var table = req.query.table;
+  context.tableTitle = table.charAt(0).toUpperCase() + table.slice(1);
   var callbackCount = 0;
+  var error = req.query.error;
+  if (error != undefined) context.error = "Error: Existing entry found. Please try again.";
 
   // Form fields are different depending on which table is selected for adding new row
   // The partial to resolve is calculated here
@@ -200,10 +272,11 @@ app.get('/update',function(req,res,next){
   var sqlQuery;
   var callbackCount = 0;
   var table = req.query.table;
+  context.tableTitle = table.charAt(0).toUpperCase() + table.slice(1);
   var id = req.query.ID;
   var id2 = req.query.ID2;
-
-  // Need to make sure ID is not empty
+  var error = req.query.error;
+  if (error != undefined) context.error = "Error: Existing entry found. Please try again.";
   
   // Get all values of selected row
   function populateFields(res, mysql, context, sqlQuery, complete) {
@@ -268,43 +341,50 @@ app.post('/add', urlencodedParser, function(req,res,next) {
   var context = {};
   var add = req.body.add;
   
-  switch (add) {
-  	case "actors":
-  		var sql = `INSERT INTO Actors (actorLastName, actorFirstName) VALUES (?, ?)`;
-  		mysql.pool.query(sql, [req.body.lname , req.body.fname], function (err, data) {if (err) {} else {}});
-  	break;
+  // Error handling - check for duplicates
+  duplicate(res, mysql, context, req, complete);
 
-  	case "genres":
-  		var sql = `INSERT INTO Genres (genre) VALUES (?)`;
-		mysql.pool.query(sql, [req.body.genre], function (err, data) {if (err) {} else {}});
-  	break;
-  	
-  	case "movies":
-  		console.log(req.body);
-  		var sql = `INSERT INTO Movies (movieTitle, releaseYear, runtime, ratingIMDB, ratingRottenTomatoes, genre) VALUES (?, ?, ?, ?, ?, ?)`;
-  		mysql.pool.query(sql, [req.body.movie_title, req.body.release_year, req.body.runtime, req.body.imdb_rating, req.body.rt_rating, req.body.genre], function (err, data) {if (err) {} else {}});
-  	break;
-  	
-  	case "awards":
-  		var firstNameActor = req.body.lead_actor.split(' ').slice(0, -1).join(' ');
-		var lastNameActor = req.body.lead_actor.split(' ').slice(-1).join(' ');
-		var firstNameActress = req.body.lead_actress.split(' ').slice(0, -1).join(' ');
-		var lastNameActress = req.body.lead_actress.split(' ').slice(-1).join(' ');
-  		var sql = `INSERT INTO OscarWinners (year, bestPicture, leadActor, leadActress) VALUES (?, (SELECT movieID FROM Movies WHERE movieTitle=?), (SELECT actorID FROM Actors WHERE actorLastName=? AND actorFirstName=?), (SELECT actorID FROM Actors WHERE actorLastName=? AND actorFirstName=?))`;
-  		mysql.pool.query(sql, [req.body.year, req.body.best_picture, lastNameActor,firstNameActor, lastNameActress, firstNameActress], function (err, data) {if (err) {} else {}});
-  	break;
-  	
-  	case "movies-actors":
-  		var firstName = req.body.actor.split(' ').slice(0, -1).join(' ');
-		var lastName = req.body.actor.split(' ').slice(-1).join(' ');
-  		var sql = `INSERT INTO Movies_Actors (movieID, actorID) VALUES ((SELECT movieID FROM Movies WHERE movieTitle=?), (SELECT actorID FROM Actors WHERE actorLastName=? AND actorFirstName=?))`;
-		mysql.pool.query(sql, [req.body.movie, lastName, firstName], function (err, data) {if (err) {} else {}});
-  	break;
-
-  	default: break;
+  function complete() {
+	if (context.duplicate) {
+	  res.redirect('add?table=' + add + '&error=dup');
+	  return;
+	} else {
+	  addRow();
+	}
   }
+  
+  function addRow() {
+	switch (add) {
+		case "actors":
+			var sql = `INSERT INTO Actors (actorLastName, actorFirstName) VALUES (?, ?)`;
+			mysql.pool.query(sql, [req.body.lname , req.body.fname], function (err, data) {if (err) {} else {}});
+		break;
 
-  res.redirect('view?table=' + add);
+		case "genres":
+			var sql = `INSERT INTO Genres (genre) VALUES (?)`;
+			mysql.pool.query(sql, [req.body.genre], function (err, data) {if (err) {} else {}});
+		break;
+		
+		case "movies":
+			var sql = `INSERT INTO Movies (movieTitle, releaseYear, runtime, ratingIMDB, ratingRottenTomatoes, genre) VALUES (?, ?, ?, ?, ?, ?)`;
+			mysql.pool.query(sql, [req.body.movie_title, req.body.release_year, req.body.runtime, req.body.imdb_rating, req.body.rt_rating, req.body.genre], function (err, data) {if (err) {} else {}});
+		break;
+		
+		case "awards":
+			var sql = `INSERT INTO OscarWinners (year, bestPicture, leadActor, leadActress) VALUES (?, ?, ?, ?)`;
+			mysql.pool.query(sql, [req.body.year, req.body.best_picture, req.body.lead_actor, req.body.lead_actress], function (err, data) {if (err) {} else {}});
+		break;
+		
+		case "movies-actors":
+			var sql = `INSERT INTO Movies_Actors (movieID, actorID) VALUES (?, ?)`;
+			mysql.pool.query(sql, [req.body.movie, req.body.actor], function (err, data) {if (err) {} else {}});
+		break;
+
+		default: break;
+	  }
+	res.redirect('view?table=' + add);
+  }
+  
 });
 
 // POST request - update row in table
@@ -315,42 +395,58 @@ app.post('/update', urlencodedParser, function(req,res,next) {
   var id = req.query.ID;
   var id2 = req.query.ID2;
   
-  // Select query to execute based on table
-  // Values to update should all be in req.body object
-  switch (table) {
-	case "movies": {
-      sqlQuery = "UPDATE Movies SET movieTitle = ?, releaseYear = ?, runtime = ?, ratingIMDB = ?, ratingRottenTomatoes = ?, genre = ? WHERE movieID = " + id;
-	  values = [req.body.movie_title, req.body.release_year, req.body.runtime, req.body.imdb_rating, req.body.rt_rating, req.body.genre];
-	  break;
+  // Error handling - check for duplicates
+  duplicate(res, mysql, context, req, complete);
+  
+  function complete() {
+	if (context.duplicate) {
+	  res.redirect('update?table=' + table + '&ID=' + id + '&ID2' + id2 + '&error=dup');
+	  return;
+	} else {
+	  updateRow();
 	}
-	case "actors": {
-	  sqlQuery = "UPDATE Actors SET actorLastName = ?, actorFirstName = ? WHERE actorID = " + id;
-	  values = [req.body.lname , req.body.fname];
-	  break;
-	}
-	case "genres": {
-	  sqlQuery = "UPDATE Genres SET genre = ? WHERE genre = '" + id + "'";
-	  values = [req.body.genre];
-	  break;
-	}
-	case "awards": {
-	  sqlQuery = "Update OscarWinners SET year = ?, bestPicture = ?, leadActor = ?, leadActress = ? WHERE year = " + id;
-	  values = [req.body.year, req.body.best_picture, req.body.lead_actor, req.body.lead_actress];
-	  break;
-	}
-	case "movies-actors": {
-	  sqlQuery = "Update Movies_Actors SET movieID = ?, actorID = ? WHERE movieID = " + id + " AND actorID = " + id2;
-	  values = [req.body.movie, req.body.actor];
-	  break;
-	}
-	default: break;
   }
   
-  // SQL query
-  mysql.pool.query(sqlQuery, values, function(err, rows, fields){
-    if(err){return next(err)};
-	res.redirect('view?table=' + table);
-  });
+  // Select query to execute based on table
+  // Values to update should all be in req.body object
+  function updateRow() {
+	switch (table) {
+	  case "movies": {
+        sqlQuery = "UPDATE Movies SET movieTitle = ?, releaseYear = ?, runtime = ?, ratingIMDB = ?, ratingRottenTomatoes = ?, genre = ? WHERE movieID = " + id;
+	    values = [req.body.movie_title, req.body.release_year, req.body.runtime, req.body.imdb_rating, req.body.rt_rating, req.body.genre];
+	    break;
+	  }
+	  case "actors": {
+	    sqlQuery = "UPDATE Actors SET actorLastName = ?, actorFirstName = ? WHERE actorID = " + id;
+	    values = [req.body.lname , req.body.fname];
+	    break;
+	  }
+	  case "genres": {
+	    sqlQuery = "UPDATE Genres SET genre = ? WHERE genre = '" + id + "'";
+	    values = [req.body.genre];
+	    break;
+	  }
+	  case "awards": {
+	    sqlQuery = "Update OscarWinners SET year = ?, bestPicture = ?, leadActor = ?, leadActress = ? WHERE year = " + id;
+	    values = [req.body.year, req.body.best_picture, req.body.lead_actor, req.body.lead_actress];
+	    break;
+	  }
+	  case "movies-actors": {
+	    sqlQuery = "Update Movies_Actors SET movieID = ?, actorID = ? WHERE movieID = " + id + " AND actorID = " + id2;
+	    values = [req.body.movie, req.body.actor];
+	    break;
+	  }
+	  default: break;
+    }
+  
+    // SQL query
+    mysql.pool.query(sqlQuery, values, function(err, rows, fields){
+      if(err){return next(err)};
+	  res.redirect('view?table=' + table);
+    });
+  }
+  
+  
 });
 
 app.get('/delete',function(req,res,next){
@@ -361,34 +457,35 @@ var ID = req.query.ID;
   switch (req.query.table) {
 	  case "movies": {
 		  var sql = `DELETE FROM Movies WHERE movieID=?`;
-		  mysql.pool.query(sql, [ID], function (err, data) {if (err) {} else {}});
+		  mysql.pool.query(sql, [ID], function (err, data) {if (err) {} else {complete()}});
 		  break;
 		  }
 	  case "actors": {
 		  var sql = `DELETE FROM Actors WHERE actorID=?`;
-		  mysql.pool.query(sql, [ID], function (err, data) {if (err) {} else {}});
+		  mysql.pool.query(sql, [ID], function (err, data) {if (err) {} else {complete()}});
 		  break;
 		  }
 	  case "awards": {
 		  var sql = `DELETE FROM OscarWinners WHERE year=?`;
-		  mysql.pool.query(sql, [ID], function (err, data) {if (err) {} else {}});
+		  mysql.pool.query(sql, [ID], function (err, data) {if (err) {} else {complete()}});
 		  break;
 		  }
 	  case "genres": {
 		  var sql = `DELETE FROM Genres WHERE genre=?`;
-		  mysql.pool.query(sql, [ID], function (err, data) {if (err) {} else {}});
+		  mysql.pool.query(sql, [ID], function (err, data) {if (err) {} else {complete()}});
 		  break;
 		  }
 	  case "movies-actors": {
 		  var sql = `DELETE FROM Movies_Actors WHERE movieID=? AND actorID=?`;
-		  mysql.pool.query(sql, [ID, req.query.ID2], function (err, data) {if (err) {} else {}});
+		  mysql.pool.query(sql, [ID, req.query.ID2], function (err, data) {if (err) {} else {complete()}});
 		  break;
 		  }
 	  default: break;
   }
 
-  res.redirect('view?table=' + table);
-
+  function complete() {
+	res.redirect('view?table=' + table);
+  }
 });
 
 app.use(function(req,res){
