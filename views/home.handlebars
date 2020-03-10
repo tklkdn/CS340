@@ -1,6 +1,6 @@
 <h1>Home</h1>
 <p>Welcome to RedDB Group Home Page for our CS340 Project</p>
-<p>Top 50 movies in our database</p>
+<p>View the Top 50 movies in our database, ranked by their aggregate scores</p>
 
 <form method="get" id="filter">
   <label for="genre">Filter by genre</label><br>
@@ -23,7 +23,7 @@
 	  <th>Release year</th>
 	  <th>Genre</th>
 	  <th>Won Best Picture</th>
-	  <th>Our score</th>
+	  <th>Aggregate score*</th>
 	</tr>
 	{{#each movieList}}
       <tr>
@@ -35,5 +35,7 @@
 	{{/each}}
   </tbody>
 </table>
+
+<p style="font-size: 10pt;">* Calculated by averaging IMDB score and Rotten Tomatoes score</p>
 
 <br><br><br>

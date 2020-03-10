@@ -1,4 +1,7 @@
 <h1>{{tableTitle}}</h1>
+<p>View, add, update, or delete entries from {{tableTitle}} table</p>
+<p><a href='/add?table={{table}}'>Add Row</a></p>
+
 <table border="1" class="{{firstCol}}">
   <tbody>
     <tr>
@@ -19,7 +22,7 @@
 	{{/each}}
   </tbody>
 </table>
-<p><a href='/add?table={{table}}'>Add Row</a></p>
+
 <br><br><br>
 
 <script>

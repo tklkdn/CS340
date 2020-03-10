@@ -55,7 +55,7 @@ function getActors(res, mysql, context, complete) {
 }
 
 // Check for duplicates when adding or updating an entry
-function duplicate(res, mysql, context, req, complete) {
+function duplicate(res, mysql, context, req, num, complete) {
   var sqlQuery;
   var table = req.body.add == undefined ? req.query.table : req.body.add;
   
@@ -80,7 +80,7 @@ function duplicate(res, mysql, context, req, complete) {
   
   mysql.pool.query(sqlQuery, function(err, rows, fields){
 	if(err){return err};
-	if (rows[0].count > 0) context.duplicate = true;
+	if (rows[0].count > num) context.duplicate = true;
 	else context.duplicate = false;
 	complete();
   })
@@ -342,7 +342,7 @@ app.post('/add', urlencodedParser, function(req,res,next) {
   var add = req.body.add;
   
   // Error handling - check for duplicates
-  duplicate(res, mysql, context, req, complete);
+  duplicate(res, mysql, context, req, 0, complete);
 
   function complete() {
 	if (context.duplicate) {
@@ -396,7 +396,7 @@ app.post('/update', urlencodedParser, function(req,res,next) {
   var id2 = req.query.ID2;
   
   // Error handling - check for duplicates
-  duplicate(res, mysql, context, req, complete);
+  duplicate(res, mysql, context, req, 1, complete);
   
   function complete() {
 	if (context.duplicate) {
@@ -450,9 +450,8 @@ app.post('/update', urlencodedParser, function(req,res,next) {
 });
 
 app.get('/delete',function(req,res,next){
-
-var table = req.query.table;
-var ID = req.query.ID;
+  var table = req.query.table;
+  var ID = req.query.ID;
 
   switch (req.query.table) {
 	  case "movies": {

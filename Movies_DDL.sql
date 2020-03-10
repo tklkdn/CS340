@@ -28,7 +28,7 @@ CREATE TABLE Movies (
 	movieTitle varchar(255) NOT NULL,
 	releaseYear int(11) NOT NULL,
 	runtime int(11) NOT NULL,
-	ratingIMDB decimal(2, 1),
+	ratingIMDB decimal(3, 1),
 	ratingRottenTomatoes int(11),
 	genre varchar(255),
 	PRIMARY KEY (movieID),
