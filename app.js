@@ -54,33 +54,38 @@ function getActors(res, mysql, context, complete) {
   })
 }
 
-// Check for duplicates when adding or updating an entry
-function duplicate(res, mysql, context, req, num, complete) {
+// Check for duplicates when adding an entry
+function duplicate(res, mysql, context, req, op, complete) {
   var sqlQuery;
   var table = req.body.add == undefined ? req.query.table : req.body.add;
   
   switch(table) {
 	case "actors":
-		sqlQuery = "SELECT COUNT(actorID) AS count FROM Actors WHERE actorLastName = '" + req.body.lname + "' AND actorFirstName = '" + req.body.fname + "'";
+		sqlQuery = "SELECT COUNT(actorID) AS count FROM Actors WHERE actorLastName = '" + req.body.lname + "' AND actorFirstName = '" + req.body.fname + "'"; 
+		if (op == "update") sqlQuery = sqlQuery + " AND actorID != " + req.query.ID; 
 		break;
 	case "movies":
 		sqlQuery = "SELECT COUNT(movieID) AS count FROM Movies WHERE movieTitle = '" + req.body.movie_title + "' AND releaseYear = " + req.body.release_year;
+		if (op == "update") sqlQuery = sqlQuery + " AND movieID != " + req.query.ID;
 		break;
 	case "genres":
 		sqlQuery = "SELECT COUNT(genre) AS count FROM Genres WHERE genre = '" + req.body.genre + "'";
+		if (op == "update") sqlQuery = sqlQuery + " AND genre != '" + req.query.ID + "'";
 		break;
 	case "awards":
 		sqlQuery = "SELECT COUNT(year) AS count FROM OscarWinners WHERE year = " + req.body.year;
+		if (op == "update") sqlQuery = sqlQuery + " AND year != " + req.query.ID;
 		break;
 	case "movies-actors":
 		sqlQuery = "SELECT COUNT(movieID) AS count FROM Movies_Actors WHERE movieID = " + req.body.movie + " AND actorID = " + req.body.actor;
+		if (op == "update") sqlQuery = sqlQuery + " AND movieID != " + req.query.ID + " AND actorID != " + req.query.ID2;
 		break;
 	default: break;
   }
   
   mysql.pool.query(sqlQuery, function(err, rows, fields){
 	if(err){return err};
-	if (rows[0].count > num) context.duplicate = true;
+	if (rows[0].count > 0) context.duplicate = true;
 	else context.duplicate = false;
 	complete();
   })
@@ -342,7 +347,7 @@ app.post('/add', urlencodedParser, function(req,res,next) {
   var add = req.body.add;
   
   // Error handling - check for duplicates
-  duplicate(res, mysql, context, req, 0, complete);
+  duplicate(res, mysql, context, req, "add", complete);
 
   function complete() {
 	if (context.duplicate) {
@@ -396,11 +401,11 @@ app.post('/update', urlencodedParser, function(req,res,next) {
   var id2 = req.query.ID2;
   
   // Error handling - check for duplicates
-  duplicate(res, mysql, context, req, 1, complete);
+  duplicate(res, mysql, context, req, "update", complete);
   
   function complete() {
 	if (context.duplicate) {
-	  res.redirect('update?table=' + table + '&ID=' + id + '&ID2' + id2 + '&error=dup');
+	  res.redirect('update?table=' + table + '&ID=' + id + '&ID2=' + id2 + '&error=dup');
 	  return;
 	} else {
 	  updateRow();
