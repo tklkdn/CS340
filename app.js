@@ -27,7 +27,7 @@ app.listen(app.get('port'), function(){
   console.log('Handlebars/Node started on http://flipX.engr.oregonstate.edu:' + app.get('port') + '; press Ctrl-C to terminate.');
 });
 
-// Get all genres
+// Get all genres for Genre dropdown
 function getGenres(res, mysql, context, complete) {
   mysql.pool.query('SELECT genre FROM Genres ORDER BY genre ASC', function(err, rows, fields){
 	if(err){return err};
@@ -36,7 +36,7 @@ function getGenres(res, mysql, context, complete) {
   });
 }
 
-// Get all movie titles
+// Get all movie titles for Movies dropdown
 function getMovies(res, mysql, context, complete) {
   mysql.pool.query('SELECT movieID, movieTitle FROM Movies ORDER BY movieTitle ASC', function(err, rows, fields){
 	if(err){return err};
@@ -45,7 +45,7 @@ function getMovies(res, mysql, context, complete) {
   })
 }
 
-// Get all actor names
+// Get all actor names for Actors dropdown
 function getActors(res, mysql, context, complete) {
   mysql.pool.query('SELECT actorID, CONCAT(actorFirstName, " ", actorLastName) AS actor FROM Actors ORDER BY actorFirstName ASC', function(err, rows, fields){
 	if(err){return err};
@@ -54,7 +54,7 @@ function getActors(res, mysql, context, complete) {
   })
 }
 
-// Check for duplicates when adding an entry
+// Check for duplicates when adding or updating an entry
 function duplicate(res, mysql, context, req, op, complete) {
   var sqlQuery;
   var table = req.body.add == undefined ? req.query.table : req.body.add;
@@ -108,6 +108,7 @@ app.get('/',function(req,res,next){
 	  filter = 'WHERE m.genre = "' + genre + '"'
 	}
     
+	// Query top 50 best rated movies from DB
 	mysql.pool.query('SELECT movieTitle, releaseYear, m.genre, IF(bestPicture IS NOT NULL, "Yes", "No"), ((ratingIMDB * 10) + ratingRottenTomatoes)/2 AS score FROM Movies m INNER JOIN Genres g ON m.genre = g.genre LEFT JOIN OscarWinners o ON m.movieID = o.bestPicture ' + filter + ' ORDER BY score DESC LIMIT 50', function(err, rows, fields){
 	  if(err){return next(err)};
 	  context.movieList = rows;
@@ -235,7 +236,7 @@ app.post('/search', urlencodedParser, function(req,res,next) {
 
 });
 
-// Add a row to a table
+// GET request - /add
 // Fields are dynamically generated through handlebar partials
 app.get('/add',function(req,res,next){  
   var context = {};
@@ -269,7 +270,7 @@ app.get('/add',function(req,res,next){
   }
 });
 
-// Update an existing row in a table
+// GET request - /update
 // Fields are dynamically generated through handlebar partials
 app.get('/update',function(req,res,next){
   var context = {};
@@ -342,6 +343,7 @@ app.get('/update',function(req,res,next){
   }
 });
 
+// POST request - ADD new entry to table
 app.post('/add', urlencodedParser, function(req,res,next) {
   var context = {};
   var add = req.body.add;
@@ -392,7 +394,7 @@ app.post('/add', urlencodedParser, function(req,res,next) {
   
 });
 
-// POST request - update row in table
+// POST request - UPDATE existing entry in table
 app.post('/update', urlencodedParser, function(req,res,next) {
   var context = {};
   var sqlQuery, values;
@@ -454,6 +456,7 @@ app.post('/update', urlencodedParser, function(req,res,next) {
   
 });
 
+// DELETE an entry from table
 app.get('/delete',function(req,res,next){
   var table = req.query.table;
   var ID = req.query.ID;
