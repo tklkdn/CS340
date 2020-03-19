@@ -1,3 +1,5 @@
+/* DDL queries */
+
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS OscarWinners;
 DROP TABLE IF EXISTS Movies_Actors;

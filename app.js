@@ -1,3 +1,6 @@
+// Main app file for our CS 340 project
+// Requires and setup to include express, database connections, and other dependencies
+
 var express = require('express');
 var mysql = require('./dbcon.js');
 var path = require('path');
